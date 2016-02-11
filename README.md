@@ -1,2 +1,0 @@
-# dynq
-DynamoDB query library.
