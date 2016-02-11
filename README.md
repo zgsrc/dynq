@@ -12,20 +12,18 @@ AWS DynamoDB query library.  Call it "dink" if you like.
 ```js
 var dynq = require("dynq");
 
-// Configure using standard from a Javascript object or a JSON configuration file.
+// Configure using object or JSON file.
 dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5 });
 dynq.configFromPath("./aws.json");
 
-// Create a connection 
+// Create a simple connection
 var simple = new dynq.Connection("us-east-1");
 
-// Create a multi-master connection with an array of AWS regions. The second parameter specifies if you would like to distribute reads across regions.
+// Create a multi-master connection with an array of AWS regions.
 var multiMaster = dynq.connect([ "us-east-1", "us-west-1" ], true);
 ```
 
-The connections are API compatible with the AWS SDK.
-
-[Documentation for AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).  
+Full list of [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).  The connections are API compatible with the [AWS DynamoDB API](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html).
 
 ## API
 ```js
