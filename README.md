@@ -1,7 +1,6 @@
 # DynQ
 AWS DynamoDB query library.  Call it "dink" if you like.
 
-## Features
 * Support for multi-master writes and distributed reads.
 * Automatic resubmission of 'retryable' and provision throughput errors.
 * Transparent encoding to and decoding from DynamoDB typed JSON.
@@ -29,8 +28,8 @@ var multiMaster = dynq.connect([ "us-east-1", "us-west-1" ], true);
 
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
-* `dynq.config( object )`
-* `dynq.configFromPath( string )`
+* ```js dynq.config( object ) `
+* ```js dynq.configFromPath( string ) `
 
 ### Constructors
 
