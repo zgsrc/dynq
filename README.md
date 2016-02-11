@@ -28,14 +28,42 @@ var multiMaster = dynq.connect([ "us-east-1", "us-west-1" ], true);
 
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
-* ```js dynq.config( object ) `
-* ```js dynq.configFromPath( string ) `
+* `dynq.config(config)`
+* `dynq.configFromPath(path)`
 
 ### Constructors
 
 Create connections with builder method or constructor syntax.
 
-* `dynq.connect( string/array: regions [, bool: distribute reads ] )`
-* `new dynq.Connection( string/array: regions [, bool: distribute reads ] )`
+* `dynq.connect(regions, distributeReads)`
+* `new dynq.Connection(regions, distributeReads)`
+
+### DynamoDB Native Operations
 
 The returned connections are compatible with the [AWS DynamoDB API](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html).
+
+* `cxn.batchGetItem(params, cb)`
+* `cxn.batchWriteItem(params, cb)`
+* `cxn.createTable(params, cb)`
+* `cxn.deleteItem(params, cb)`
+* `cxn.deleteTable(params, cb)`
+* `cxn.describeTable(params, cb)`
+* `cxn.getItem(params, cb)`
+* `cxn.listTables(params, cb)`
+* `cxn.putItem(params, cb)`
+* `cxn.query(params, cb)`
+* `cxn.scan(params, cb)`
+* `cxn.updateItem(params, cb)`
+* `cxn.updateTable(params, cb)`
+* `cxn.waitFor(event, options, cb)`
+
+These methods invoke the AWS SDK counterparts and do not automatically decode responses in the DynamoDB typed JSON format.
+
+### Record-Level Methods
+
+* `cxn.exists(table, key, cb)`
+* `cxn.write(table, item, cb)`
+* `cxn.insert(table, key, item, cb)`
+* `cxn.get(table, key, cb)`
+* `cxn.getPart(table, key, attributes, cb)`
+* `cxn.destroy(table, key, expected, cb)`
