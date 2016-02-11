@@ -1,0 +1,2 @@
+# dynq
+DynamoDB query library.
