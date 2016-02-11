@@ -23,7 +23,9 @@ var simple = new dynq.Connection("us-east-1");
 var multiMaster = dynq.connect([ "us-east-1", "us-west-1" ], true);
 ```
 
-That's all you need to get started.  Find documetnation for standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property) here.  The connections are API compatible with the AWS SDK.
+The connections are API compatible with the AWS SDK.
+
+[Documentation for AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).  
 
 ## API
 ```js
