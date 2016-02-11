@@ -1,0 +1,32 @@
+{
+  "name": "dynq",
+  "version": "1.0.0",
+  "description": "DynamoDB query library.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/triploc/dynq.git"
+  },
+  "keywords": [
+    "AWS",
+    "DynamoDB",
+    "query",
+    "dynamo"
+  ],
+  "author": "Jonathan Hollinger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/triploc/dynq/issues"
+  },
+  "homepage": "https://github.com/triploc/dynq#readme",
+  "dependencies": {
+    "aws-sdk": "^2.2.34",
+    "sugar": "^1.4.1"
+  },
+  "devDependencies": {
+    "mocha": "^2.4.5"
+  }
+}
