@@ -23,10 +23,14 @@ var simple = new dynq.Connection("us-east-1");
 var multiMaster = dynq.connect([ "us-east-1", "us-west-1" ], true);
 ```
 
-Full list of [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).  The connections are API compatible with the [AWS DynamoDB API](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html).
+Full list of [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).  The connections are compatible with the [AWS DynamoDB API](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html).
 
-## API
-```js
-var dynq = require("dynq");
+## Documentation
 
-```
+### Configuration
+* dynq.config( object )
+* dynq.configFromPath( string )
+
+### Constructors
+* dynq.connect( string/array: regions [, bool: distribute reads ] )
+* new dynq.Connection( string/array: regions [, bool: distribute reads ] )
