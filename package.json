@@ -24,6 +24,7 @@
   "homepage": "https://github.com/triploc/dynq#readme",
   "dependencies": {
     "aws-sdk": "^2.2.34",
+    "file-line-reader": "^1.0.2",
     "sugar": "^1.4.1"
   },
   "devDependencies": {
