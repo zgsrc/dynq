@@ -1,4 +1,4 @@
-![DynQ](/bkn.jpg "DynQ")
+![DynQ](/package.jpg "DynQ")
 
 # DynQ
 AWS DynamoDB query library.  It makes data access layers based on DynamoDB easier to develop and maintain.  Call it "dink" if you like.  Amongst other things, this library features:
