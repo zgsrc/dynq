@@ -73,6 +73,26 @@ __Schema Management Methods__
 * `schema.backup(filepath, cb)` - Dump data from loaded DyanmoDB tables into JSON files.  If filepath is a directory, store one table per file; otherwise, store everything in one table.
 * `schema.restore(filepath, cb)` - Load records into DynamoDB tables from JSON file(s).  (Not fully implemented.)
 
+```js
+{
+    INTERACTIONS_TABLE: { 
+        columns: { user: "S", match: "S", timestamp: "N", lastMessageTimestamp: "N", lastSentMessageTimestamp: "N", lastReceivedMessageTimestamp: "N" }, 
+        key: [ "user", "match" ], 
+        read: 5, 
+        write: 5, 
+        indices: [
+            [ "ByMatch", [ "match", "timestamp" ], 5, 5 ]
+        ],
+        locals: [
+            [ "ByTimestamp", "timestamp", "ALL" ],
+            [ "ByLastMessageTimestamp", "lastMessageTimestamp", "ALL" ],
+            [ "ByLastSentMessageTimestamp", "lastSentMessageTimestamp", "ALL" ],
+            [ "ByLastReceivedMessageTimestamp", "lastReceivedMessageTimestamp", "ALL" ]
+        ]
+    }
+}
+```
+
 ### Tables
 
 ```js
