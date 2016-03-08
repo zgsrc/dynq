@@ -45,6 +45,95 @@ __Arguments__
 * `regions` - A string or array of AWS regions (e.g. us-east-1).
 * `distributeReads` - A boolean value specifying if reads should be distributed across regions.
 
+### Schemas
+
+The schema API puts structure around the definition and querying of DynamoDB tables.
+
+```js
+var schema = dynq.connect("us-east-1").schema();
+```
+
+__State__
+* `schema.connection` - The underlying connection.
+* `schema.tables` - A map of loaded tables.
+* `schema.definition` - A definition of tables to be created or loaded.
+
+__Table Definition Methods__
+* `schema.listSomeTables(last, cb)` - List a page of tables starting from last.
+* `schema.listAllTables(cb)` - List all tables (automatically page until end).
+* `schema.createTable(name, columns, key, read, write, indices, locals, cb)` - Create a table.
+* `schema.describeTable(table, cb)` - Load table metadata.
+
+__Schema Management Methods__
+* `schema.load(filter, cb)` - Load tables with names that match filter.
+* `schema.define(definition)` - Set `schema.definition` from object.
+* `schema.defineFromFile(path)` - Set `schema.definition` from JSON file.
+* `schema.create(cb)` - Load tables from `schema.definition` and create ones that do not exist.
+* `schema.drop(cb)` - Drop tables from `schema.definition` that exist.
+* `schema.backup(filepath, cb)` - Dump data from loaded DyanmoDB tables into JSON files.  If filepath is a directory, store one table per file; otherwise, store everything in one table.
+* `schema.restore(filepath, cb)` - Load records into DynamoDB tables from JSON file(s).  (Not fully implemented.)
+
+### Tables
+
+```js
+var schema = dynq.connect("us-east-1").schema();
+
+schema.load(/PREFIX_.*/i, function(err) {
+    var table = schema["some-table"];
+});
+```
+
+__State__
+* `table.name` - The name of the table.
+* `table.schema` - The schema to which this table belongs.
+* `table.description` - The metadata from `schema.describeTable(name)`.
+
+__Record-Level Methods__
+* `table.drop(cb)` - Drops this table.
+* `table.overwrite(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
+* `table.insert(obj, cb)` - Inserts a record into the table.  If a record with the same key already exists, the operation fails.
+* `table.delete(key, cb)` - Deletes a record from the table with the given key.
+* `table.deleteIf(key, expect, cb)` - Deletes a record from the table with the given key if the expected field values are matched.
+* `table.exists(key, cb)` - Indicates if a record with the given key exists.
+* `table.get(key, cb)` - Gets the full record that matches the given key.
+* `table.getPart(key, attributes, cb)` - Get part of the record that matches the given key.
+
+__Query Interface__
+* `table.query()` - Returns a query interface configured to filter based on an index.
+* `table.scan()` - Returns a query interface configured to filter on a table scan.
+* `query.index(name)` - The name of an index to query (if not querying the primary key).
+* `query.conditions(conditions)` - The conditions on the key and hash of the index.
+* `query.start(start)` - Start query from this key.
+* `query.limit(count)` - Maximum number of records to query.
+* `query.select(select)` - A list of fields to select.
+* `query.backwards()` - Reverse the order in which records are returned.
+* `query.direction(direction)` - Set the order in which records are returned.
+* `query.filter(filter)` - Set filter conditions on non-indexed fields.
+* `query.or()` - Change filter conditions from "and" to "or".
+* `query.first(cb)` - Return the first record from the query.
+* `query.page(cb)` - Return a page of records.
+* `query.all(cb)` - Return all records (automatically paging until the end).
+* `query.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
+
+__Write Interface__
+* `table.write(obj)` - Returns a write interface to insert or upsert records.
+* `write.select(select)` - A list of fields to select from the record.
+* `write.conditions(expected)` - Field values expected to be found in the record.  If not matched, the operation fails.
+* `write.insert(cb)` - Insert the record.  If a record already exists with a same key, the operation fails.
+* `write.upsert(cb)` - Upserts the record.  If a record already exists with a same key, the existing record is overwritten.
+* `write.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
+
+__Edit Interface__
+* `table.edit(obj)` - Returns an edit interface to alter or insert records.
+* `edit.change(values)` - Field values to be changed/overwritten.
+* `edit.add(values)` - Field values to be added.  If numeric, this means atomic addition/subtraction.  If a set, this means addition to the set.
+* `edit.remove(values)` - Field values to be removed.  If a set, this means removal from the set.
+* `edit.conditions(expected)` - Values expected to be found in the record.  If not matched, the operation fails.
+* `edit.select(select)` - A list of fields to select from the record.
+* `edit.update(cb)` - Updates the record.  If a record does not exist, the operation fails.
+* `edit.upsert(cb)` - Upserts the record.  If a record does not exists, one is created.
+* `edit.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
+
 ### Key-Value Store Methods
 
 * `cxn.write(table, item, cb)`
