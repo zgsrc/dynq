@@ -67,7 +67,8 @@ __Table Definition Methods__
 __Schema Management Methods__
 * `schema.load(filter, cb)` - Load tables with names that match filter.
 * `schema.define(definition)` - Set `schema.definition` from object.
-* `schema.defineFromFile(path)` - Set `schema.definition` from JSON file.
+* `schema.defineFromFile(filepath)` - Set `schema.definition` from JSON file.
+* `schema.require(filepath)` - Loads a table into `schema.definition` from a module.  If a directory is specified, all modules are loaded.
 * `schema.create(cb)` - Load tables from `schema.definition` and create ones that do not exist.
 * `schema.drop(cb)` - Drop tables from `schema.definition` that exist.
 * `schema.backup(dir, cb)` - Saves data from loaded DyanmoDB tables into JSON files.
@@ -156,8 +157,8 @@ __Edit Interface__
 * `edit.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
 
 __File Methods__
-* `table.save(filepath, cb)` - Save the contents of the DynamoDB table to a file.
-* `table.load(filepath, cb)` - Load the contents of a file to the DynamoDB table.
+* `table.backup(filepath, cb)` - Save the contents of the DynamoDB table to a file.
+* `table.restore(filepath, cb)` - Load the contents of a file to the DynamoDB table.
 
 ### Key-Value Store Methods
 
