@@ -70,8 +70,8 @@ __Schema Management Methods__
 * `schema.defineFromFile(path)` - Set `schema.definition` from JSON file.
 * `schema.create(cb)` - Load tables from `schema.definition` and create ones that do not exist.
 * `schema.drop(cb)` - Drop tables from `schema.definition` that exist.
-* `schema.backup(filepath, cb)` - Dump data from loaded DyanmoDB tables into JSON files.  If filepath is a directory, store one table per file; otherwise, store everything in one table.
-* `schema.restore(filepath, cb)` - Load records into DynamoDB tables from JSON file(s).  (Not fully implemented.)
+* `schema.backup(dir, cb)` - Saves data from loaded DyanmoDB tables into JSON files.
+* `schema.restore(dir, cb)` - Load records into DynamoDB tables from JSON files in the given directory.
 
 __Schema Example__
 ```js
@@ -154,6 +154,10 @@ __Edit Interface__
 * `edit.update(cb)` - Updates the record.  If a record does not exist, the operation fails.
 * `edit.upsert(cb)` - Upserts the record.  If a record does not exists, one is created.
 * `edit.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
+
+__File Methods__
+* `table.save(filepath, cb)` - Save the contents of the DynamoDB table to a file.
+* `table.load(filepath, cb)` - Load the contents of a file to the DynamoDB table.
 
 ### Key-Value Store Methods
 
