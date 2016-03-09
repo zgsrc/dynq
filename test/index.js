@@ -1,6 +1,10 @@
 require("sugar");
 
-var dynq = null;
+var chai = require("chai"),
+    expect = chai.expect,
+    dynq = null;
+
+chai.should();
 
 describe('Connection', function() {
     
