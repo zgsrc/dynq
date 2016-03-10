@@ -1,6 +1,6 @@
 {
   "name": "dynq",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "DynamoDB query library.",
   "main": "index.js",
   "scripts": {
