@@ -25,8 +25,7 @@ describe('Module', function() {
         schema = cxn.schema().define({
             test: {
                 name: "TEST_test_table",
-                columns: { id: "S" },
-                key: [ "id" ], 
+                key: { id: "S" }, 
                 read: 5,
                 write: 5
             }

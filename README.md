@@ -63,11 +63,13 @@ __Table Definition Methods__
 * `schema.listAllTables(cb)` - List all tables (automatically page until end).
 * `schema.createTable(name, columns, key, read, write, indices, locals, cb)` - Create a table.
 * `schema.describeTable(table, cb)` - Load table metadata.
+* `schema.changeThroughput(table, read, write, cb)` - Change throughput for a table.
+* `schema.changeIndexThroughput(table, index, read, write, cb)` - Change throughput for an index.
+* `schema.factorThroughput(description, factor, cb)` - Factors throughput across the table and its indices.
 
 __Schema Management Methods__
 * `schema.load(filter, cb)` - Load tables with names that match filter.
 * `schema.define(definition)` - Set `schema.definition` from object.
-* `schema.defineFromFile(filepath)` - Set `schema.definition` from JSON file.
 * `schema.require(filepath)` - Loads a table into `schema.definition` from a module.  If a directory is specified, all modules are loaded.
 * `schema.create(cb)` - Load tables from `schema.definition` and create ones that do not exist.
 * `schema.drop(cb)` - Drop tables from `schema.definition` that exist.
@@ -77,20 +79,28 @@ __Schema Management Methods__
 __Schema Example__
 ```js
 {
-    INTERACTIONS_TABLE: { 
-        columns: { user: "S", match: "S", timestamp: "N", lastMessageTimestamp: "N", lastSentMessageTimestamp: "N", lastReceivedMessageTimestamp: "N" }, 
-        key: [ "user", "match" ], 
-        read: 5, 
-        write: 5, 
-        indices: [
-            [ "ByMatch", [ "match", "timestamp" ], 5, 5 ]
-        ],
-        locals: [
-            [ "ByTimestamp", "timestamp", "ALL" ],
-            [ "ByLastMessageTimestamp", "lastMessageTimestamp", "ALL" ],
-            [ "ByLastSentMessageTimestamp", "lastSentMessageTimestamp", "ALL" ],
-            [ "ByLastReceivedMessageTimestamp", "lastReceivedMessageTimestamp", "ALL" ]
-        ]
+    Users: {
+        name: "Users",
+        key: { id: "string" },
+        read: 5,
+        write: 5,
+        sort: {
+            ByUser: {
+                columns: { user: "string" },
+                project: "ALL"
+            }
+        },
+        indices: {
+            ByTimestamp: {
+                columns: { timestamp: "number" },
+                read: 5,
+                write: 5,
+                project: "ALL"
+            }
+        },
+        methods: function(table) {
+
+        }
     }
 }
 ```
@@ -105,13 +115,16 @@ schema.load(/PREFIX_.*/i, function(err) {
 });
 ```
 
-__State__
+__Table-Level Members__
 * `table.name` - The name of the table.
 * `table.schema` - The schema to which this table belongs.
 * `table.description` - The metadata from `schema.describeTable(name)`.
+* `table.changeThroughput(read, write, cb)` - Change throughput for a table.
+* `table.changeIndexThroughput(index, read, write, cb)` - Change throughput for an index.
+* `table.factorThroughput(factor, cb)` - Factors throughput across the table and its indices.
+* `table.drop(cb)` - Drops this table.
 
 __Record-Level Methods__
-* `table.drop(cb)` - Drops this table.
 * `table.overwrite(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
 * `table.insert(obj, cb)` - Inserts a record into the table.  If a record with the same key already exists, the operation fails.
 * `table.delete(key, cb)` - Deletes a record from the table with the given key.
