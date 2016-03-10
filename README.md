@@ -132,6 +132,7 @@ __Record-Level Methods__
 * `table.exists(key, cb)` - Indicates if a record with the given key exists.
 * `table.get(key, cb)` - Gets the full record that matches the given key.
 * `table.getPart(key, attributes, cb)` - Get part of the record that matches the given key.
+* `table.getAll(keys, attributes, cb)` - Get many records.
 
 __Query Interface__
 * `table.query()` - Returns a query interface configured to filter based on an index.
@@ -180,6 +181,8 @@ __File Methods__
 * `cxn.exists(table, key, cb)`
 * `cxn.get(table, key, cb)`
 * `cxn.getPart(table, key, attributes, cb)`
+* `cxn.getAll(table, keys, attributes, cb)`
+* `cxn.getMany(map, cb)`
 * `cxn.destroy(table, key, expected, cb)`
 
 __Arguments__
