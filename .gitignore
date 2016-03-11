@@ -4,3 +4,4 @@ lib/.DS_Store
 test.json
 
 node_modules
+coverage
