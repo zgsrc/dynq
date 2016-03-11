@@ -14,11 +14,10 @@ describe('Module', function() {
     
     it("ain't broke", function() {
         dynq = require("../index");
-        dynq.configFromPath(__dirname + "/../test.json");
     });
     
     it("can create a connection", function() {
-        cxn = dynq.connect();
+        cxn = dynq.configFromPath(__dirname + "/../test.json").connect();
     });
     
     it("can define a schema", function() {
