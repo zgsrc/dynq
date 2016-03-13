@@ -29,7 +29,7 @@ describe('Module', function() {
                 write: 5
             }
         });
-    })
+    });
     
     it("can list some tables", function(done) {
         schema.listSomeTables(function(err, result) {
@@ -149,6 +149,14 @@ describe('Module', function() {
             if (err) throw err;
             else expect(exists).to.be.not.ok;
             done();
+        });
+    });
+    
+    it("can require a schema", function(done) {
+        this.timeout(120000);
+        schema.require(__dirname + "/../examples/require").create(function(err) {
+            if (err) throw err;
+            else done();
         });
     });
     
