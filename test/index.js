@@ -76,8 +76,8 @@ describe('Module', function() {
         });
     });
     
-    it("can overwrite a record", function(done) {
-        schema.tables.test.overwrite({ id: "1", value: "two" }, function(err) {
+    it("can write a record", function(done) {
+        schema.tables.test.write({ id: "1", value: "two" }, function(err) {
             if (err) throw err;
             done();
         });

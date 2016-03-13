@@ -32,6 +32,7 @@ Configure library with standard [AWS configuration options](http://docs.aws.amaz
 
 * `dynq.config(config)`
 * `dynq.configFromPath(path)`
+* `dynq.debug`
 
 ### Constructors
 
@@ -125,14 +126,17 @@ __Table-Level Members__
 * `table.drop(cb)` - Drops this table.
 
 __Record-Level Methods__
-* `table.overwrite(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
+* `table.write(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
+* `table.writeAll(objs, cb)` - Writes records to the table.  If a record with the same key already exists, it is overwritten.
 * `table.insert(obj, cb)` - Inserts a record into the table.  If a record with the same key already exists, the operation fails.
+* `table.insertAll(objs, cb)` - Inserts records into the table.  If a record with the same key already exists, the operation fails.
 * `table.delete(key, cb)` - Deletes a record from the table with the given key.
+* `table.deleteAll(keys, cb)` - Deletes records from the table with the given keys.
 * `table.deleteIf(key, expect, cb)` - Deletes a record from the table with the given key if the expected field values are matched.
 * `table.exists(key, cb)` - Indicates if a record with the given key exists.
 * `table.get(key, cb)` - Gets the full record that matches the given key.
-* `table.getPart(key, attributes, cb)` - Get part of the record that matches the given key.
-* `table.getAll(keys, attributes, cb)` - Get many records.
+* `table.getPart(key, select, cb)` - Get part of the record that matches the given key.
+* `table.getAll(keys, select, cb)` - Get many records.
 
 __Query Interface__
 * `table.query()` - Returns a query interface configured to filter based on an index.
@@ -141,23 +145,17 @@ __Query Interface__
 * `query.conditions(conditions)` - The conditions on the key and hash of the index.
 * `query.start(start)` - Start query from this key.
 * `query.limit(count)` - Maximum number of records to query.
-* `query.select(select)` - A list of fields to select.
+* `query.select(select)` - A list of attributes to select, an attribute qualifier, or a projection expression. If empty, the whole record is projected with a separate getItem operation.
+* `query.delete()` - Delete the queried records.
 * `query.backwards()` - Reverse the order in which records are returned.
 * `query.direction(direction)` - Set the order in which records are returned.
 * `query.filter(filter)` - Set filter conditions on non-indexed fields.
 * `query.or()` - Change filter conditions from "and" to "or".
+* `query.segment(segment, total)` - Segment a scan operation into parts.
 * `query.first(cb)` - Return the first record from the query.
 * `query.page(cb)` - Return a page of records.
 * `query.all(cb)` - Return all records (automatically paging until the end).
 * `query.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
-
-__Write Interface__
-* `table.write(obj)` - Returns a write interface to insert or upsert records.
-* `write.select(select)` - A list of fields to select from the record.
-* `write.conditions(expected)` - Field values expected to be found in the record.  If not matched, the operation fails.
-* `write.insert(cb)` - Insert the record.  If a record already exists with a same key, the operation fails.
-* `write.upsert(cb)` - Upserts the record.  If a record already exists with a same key, the existing record is overwritten.
-* `write.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
 
 __Edit Interface__
 * `table.edit(obj)` - Returns an edit interface to alter or insert records.
@@ -174,23 +172,36 @@ __File Methods__
 * `table.backup(filepath, cb)` - Save the contents of the DynamoDB table to a file.
 * `table.restore(filepath, cb)` - Load the contents of a file to the DynamoDB table.
 
+### Connection Members
+
+* `cxn.distributeReads`
+* `cxn.destinations`
+* `cxn.debug`
+* `cxn.addRegion(region)`
+
 ### Key-Value Store Methods
 
 * `cxn.write(table, item, cb)`
-* `cxn.insert(table, key, item, cb)`
+* `cxn.writeAll(table, items, cb)`
+* `cxn.insert(table, keyAttr, item, cb)`
+* `cxn.insertAll(table, keyAttr, items, cb)`
+* `cxn.upsert(table, keyAttr, item, cb)`
+* `cxn.update(table, keyAttr, item, cb)`
 * `cxn.exists(table, key, cb)`
 * `cxn.get(table, key, cb)`
-* `cxn.getPart(table, key, attributes, cb)`
-* `cxn.getAll(table, keys, attributes, cb)`
+* `cxn.getPart(table, key, select, cb)`
+* `cxn.getAll(table, keys, select, cb)`
 * `cxn.getMany(map, cb)`
-* `cxn.destroy(table, key, expected, cb)`
+* `cxn.delete(table, key, expected, cb)`
+* `cxn.deleteAll(table, keys, cb)`
 
 __Arguments__
 
 * `table` - A string specifying the name of a DynamoDB table.
+* `keyAttr` - A string or array of key attribute names.
 * `key` - An object specifying the unique key of the item.
 * `item` - An object representing a table record.
-* `attributes` - An array of strings specifying column names to be fetched.
+* `select` - An projection expression or an array of strings specifying attributes to get.
 * `expected` - An object representing a set of fields that must be matched for the operation to succeed.
 * `cb` - Callback with an error and results parameters.
 
