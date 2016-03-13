@@ -131,8 +131,8 @@ describe('Module', function() {
         });
     });
     
-    it("can write a record", function(done) {
-        schema.tables.test.write({ id: "1", value: "one" }).insert(function(err) {
+    it("can over-write a record", function(done) {
+        schema.tables.test.write({ id: "1", value: "one" }, function(err) {
             if (err) throw err;
             done();
         });
