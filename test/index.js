@@ -126,7 +126,7 @@ describe('Module', function() {
     });
     
     it("can debug edit operation", function(done) {
-        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).select("ALL_NEW").debug(function(err, item) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four", some: null }).select("ALL_NEW").debug(function(err, item) {
             if (err) throw err;
             else item.should.be.ok;
             done();
@@ -173,8 +173,28 @@ describe('Module', function() {
             x4: [ 1, 2, 3 ],
             x5: new Buffer(3),
             x6: [ new Buffer(2), new Buffer(3) ],
-            x7: { x: 3, y: "asdf", z: [ 3, "hello", null ], n1: [ 1, 2, 3], s1: [ "hello", "goodbye" ], b1: [ new Buffer(1) ], b2: new Buffer(1), d1: new Date(), ae: [ ] },
-            x8: [ { x: 3, y: "asdf" }, { x: 3, y: "asdf" }, [ 1, 2, 3], [ "hello", "goodbye" ], [ new Buffer(1) ], [ "asdf", 1, false ] ],
+            x7: { 
+                x: 3, 
+                y: "asdf", 
+                z: [ 3, "hello", null ], 
+                n1: [ 1, 2, 3], 
+                s1: [ "hello", "goodbye" ], 
+                b1: [ new Buffer(1), { list: [ 1 ] } ], 
+                b2: new Buffer(1), 
+                d1: new Date(), 
+                ae: [ ] 
+            },
+            x8: [ 
+                { x: 3, y: "asdf" }, 
+                { x: 3, y: "asdf" }, 
+                [ 1, 2, 3 ], 
+                [ "hello", "goodbye" ], 
+                [ new Buffer(1) ], 
+                [ "asdf", 1, false, { okay: 1 } ],
+                new Buffer(1),
+                new Date(),
+                [ ]
+            ],
             x9: null,
             x10: new Date()
         }, function(err) {
@@ -193,6 +213,14 @@ describe('Module', function() {
     
     it("can get a record", function(done) {
         schema.tables.test.get({ id: "1" }, function(err, item) {
+            if (err) throw err;
+            else expect(item).to.be.an("object");
+            done();
+        });
+    });
+    
+    it("can get a record by value", function(done) {
+        schema.tables.test.get("1", function(err, item) {
             if (err) throw err;
             else expect(item).to.be.an("object");
             done();
@@ -389,7 +417,7 @@ describe('Module', function() {
     });
     
     it("can filter a scan", function(done) {
-        schema.tables.test.scan().filter({ id: [ "EQ", "1" ] }).all(function(err, results) {
+        schema.tables.test.scan().filter({ id: [ "EQ", "1" ], value: [ "EQ", "one" ] }).or().all(function(err, results) {
             if (err) throw err;
             else results.items.should.be.ok;
             done();
@@ -441,6 +469,13 @@ describe('Module', function() {
         schema.require(__dirname + "/../examples/require").require(__dirname + "/../examples/require/user.js").create(function(err) {
             if (err) throw err;
             else done();
+        });
+    });
+    
+    it("can query an index", function(done) {
+        schema.tables.user.index("ByTimestamp", { timestamp: [ "EQ", 1234 ] }).page(function(err, items) {
+            if (err) throw err;
+            done();
         });
     });
     
