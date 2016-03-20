@@ -16,11 +16,16 @@ describe('Module', function() {
     
     it("ain't broke", function() {
         dynq = require("../index");
+        dynq.debug = true;
+        dynq.logger = () => { };
     });
     
     it("can create a connection", function() {
         var config = JSON.parse(fs.readFileSync(__dirname + "/../test.json"));
-        cxn = dynq.config(config).connect();
+        cxn = dynq.config(config).connect("us-east-1", false);
+        cxn.destinations = [ ];
+        cxn.addRegion();
+        cxn.debug = true;
     });
     
     it("can define a schema", function() {
@@ -93,8 +98,16 @@ describe('Module', function() {
         });
     });
     
+    it("can debug edit operation", function(done) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).select("ALL_NEW").debug(function(err, item) {
+            if (err) throw err;
+            else item.should.be.ok;
+            done();
+        });
+    });
+    
     it("can edit and upsert a record", function(done) {
-        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).select("ALL_NEW").upsert(function(err, item) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).add({ set: [ 1, 2 ] }).select("ALL_NEW").upsert(function(err, item) {
             if (err) throw err;
             else item.should.be.ok;
             done();
@@ -102,14 +115,26 @@ describe('Module', function() {
     });
     
     it("can edit and update a record", function(done) {
-        schema.tables.test.edit({ id: "1" }).change({ value: "five" }).update(function(err) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "five" }).remove({ set: [ 2 ] }).update(function(err) {
             if (err) throw err;
             done();
         });
     });
     
     it("can write a record", function(done) {
-        schema.tables.test.write({ id: "1", value: "six" }, function(err) {
+        schema.tables.test.write({ 
+            id: "1", 
+            value: "six",
+            x1: 1,
+            x2: true,
+            x3: [ "asdf", "zxcv" ],
+            x4: [ 1, 2, 3 ],
+            x5: new Buffer(3),
+            x6: [ new Buffer(2), new Buffer(3) ],
+            x7: { x: 3, y: "asdf", z: [ 3, "hello", null ], n1: [ 1, 2, 3], s1: [ "hello", "goodbye" ], b1: [ new Buffer(1) ] },
+            x8: [ { x: 3, y: "asdf" }, { x: 3, y: "asdf" }, [ 1, 2, 3], [ "hello", "goodbye" ], [ new Buffer(1) ], [ "asdf", 1, false ] ],
+            x9: null
+        }, function(err) {
             if (err) throw err;
             done();
         });
@@ -210,6 +235,20 @@ describe('Module', function() {
         });
     });
     
+    it("can get many records", function(done) {
+        var options = { };
+        options[schema.tables.test.name] = {
+            keys: (1).upto(100).map((i) => { return { id: i.toString() }; }),
+            select: [ "id" ]
+        };
+        
+        cxn.getMany(options, function(err, results) {
+            if (err) throw err;
+            else results[schema.tables.test.name].length.should.equal(100);
+            done();
+        });
+    });
+    
     it("can select and delete multiple records", function(done) {
         schema.tables.test.scan().delete().all(function(err) {
             if (err) throw err;
@@ -249,6 +288,30 @@ describe('Module', function() {
         });
     });
     
+    it("can get first record", function(done) {
+        schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).backwards().select([ "id" ]).first(function(err, result) {
+            if (err) throw err;
+            else result.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can get a limited number of records", function(done) {
+        schema.tables.test.scan().limit(20).select("ALL_ATTRIBUTES").all(function(err, results) {
+            if (err) throw err;
+            else results.items.length.should.equal(20);
+            done();
+        });
+    });
+    
+    it("can debug scan", function(done) {
+        schema.tables.test.scan().select().debug(function(err, result) {
+            if (err) throw err;
+            else result.should.be.ok;
+            done();
+        });
+    });
+    
     it("can project records", function(done) {
         schema.tables.test.scan().select().all(function(err, results) {
             if (err) throw err;
@@ -263,6 +326,10 @@ describe('Module', function() {
             if (err) throw err;
             else done();
         });
+    });
+    
+    it("can call a table method", function(done) {
+        schema.tables.user.sample(done);
     });
     
     it("can drop a schema", function(done) {
