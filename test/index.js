@@ -2,6 +2,7 @@ require("sugar");
 
 var fs = require("fs"),
     chai = require("chai"),
+    async = require("async"),
     expect = chai.expect,
     dynq = null,
     cxn = null,
@@ -192,20 +193,19 @@ describe('Module', function() {
         });
     });
     
+    it("can backup records", function(done) {
+        schema.backup(__dirname, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
     it("can get multiple records", function(done) {
         schema.tables.test.getAll((1).upto(100).map((i) => { 
             return { id: i.toString() }; 
         }), function(err, items) {
             if (err) throw err;
             else items.length.should.equal(100);
-            done();
-        });
-    });
-    
-    it("can project records", function(done) {
-        schema.tables.test.scan().select().all(function(err, results) {
-            if (err) throw err;
-            else results.items.length.should.equal(100);
             done();
         });
     });
@@ -232,6 +232,29 @@ describe('Module', function() {
             else items.count.should.equal(0);
             done();
         })
+    });
+    
+    it("can restore records", function(done) {
+        this.timeout(60000);
+        schema.restore(__dirname, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can remove backup files", function(done) {
+        schema.removeBackupFiles(__dirname, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can project records", function(done) {
+        schema.tables.test.scan().select().all(function(err, results) {
+            if (err) throw err;
+            else results.items.length.should.equal(100);
+            done();
+        });
     });
     
     it("can require a schema", function(done) {
