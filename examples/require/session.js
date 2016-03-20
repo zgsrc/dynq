@@ -5,13 +5,14 @@ module.exports = {
     key: { id: "text", timestamp: "number" }, 
     sorts: {
         ByOther: {
-            columns: { other: "number" }
+            columns: { other: "number" },
+            project: [ "id", "other" ]
         }
     },
     indices: {
         ByUser: {
             columns: { user: "text", timestamp: "number" },
-            project: "KEYS_ONLY"
+            project: [ "user", "timestamp" ] 
         },
         ByTimestamp: {
             columns: { timestamp: "number" },
