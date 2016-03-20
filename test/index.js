@@ -1,6 +1,7 @@
 require("sugar");
 
-var chai = require("chai"),
+var fs = require("fs"),
+    chai = require("chai"),
     expect = chai.expect,
     dynq = null,
     cxn = null,
@@ -17,7 +18,8 @@ describe('Module', function() {
     });
     
     it("can create a connection", function() {
-        cxn = dynq.configFromPath(__dirname + "/../test.json").connect();
+        var config = JSON.parse(fs.readFileSync(__dirname + "/../test.json"));
+        cxn = dynq.config(config).connect();
     });
     
     it("can define a schema", function() {
@@ -76,8 +78,37 @@ describe('Module', function() {
         });
     });
     
+    it("can upsert a record", function(done) {
+        schema.tables.test.upsert({ id: "1", value: "two" }, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can update a record", function(done) {
+        schema.tables.test.update({ id: "1", value: "three" }, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can edit and upsert a record", function(done) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).select("ALL_NEW").upsert(function(err, item) {
+            if (err) throw err;
+            else item.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can edit and update a record", function(done) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "five" }).update(function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
     it("can write a record", function(done) {
-        schema.tables.test.write({ id: "1", value: "two" }, function(err) {
+        schema.tables.test.write({ id: "1", value: "six" }, function(err) {
             if (err) throw err;
             done();
         });
@@ -118,7 +149,7 @@ describe('Module', function() {
     });
     
     it("can conditionally delete a record with correct values", function(done) {
-        schema.tables.test.deleteIf({ id: "1" }, { value: "two" }, function(err) {
+        schema.tables.test.deleteIf({ id: "1" }, { value: "six" }, function(err) {
             if (err) throw err;
             done();
         });
@@ -150,6 +181,57 @@ describe('Module', function() {
             else expect(exists).to.be.not.ok;
             done();
         });
+    });
+    
+    it("can write multiple records", function(done) {
+        schema.tables.test.writeAll((1).upto(100).map((i) => { 
+            return { id: i.toString() }; 
+        }), function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can get multiple records", function(done) {
+        schema.tables.test.getAll((1).upto(100).map((i) => { 
+            return { id: i.toString() }; 
+        }), function(err, items) {
+            if (err) throw err;
+            else items.length.should.equal(100);
+            done();
+        });
+    });
+    
+    it("can project records", function(done) {
+        schema.tables.test.scan().select().all(function(err, results) {
+            if (err) throw err;
+            else results.items.length.should.equal(100);
+            done();
+        });
+    });
+    
+    it("can select and delete multiple records", function(done) {
+        schema.tables.test.scan().delete().all(function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can delete multiple records", function(done) {
+        schema.tables.test.deleteAll((1).upto(100).map((i) => { 
+            return { id: i.toString() }; 
+        }), function(err, items) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("has no records", function(done) {
+        schema.tables.test.scan().all(function(err, items) {
+            if (err) throw err;
+            else items.count.should.equal(0);
+            done();
+        })
     });
     
     it("can require a schema", function(done) {

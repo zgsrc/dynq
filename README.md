@@ -129,7 +129,6 @@ __Record-Level Methods__
 * `table.write(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
 * `table.writeAll(objs, cb)` - Writes records to the table.  If a record with the same key already exists, it is overwritten.
 * `table.insert(obj, cb)` - Inserts a record into the table.  If a record with the same key already exists, the operation fails.
-* `table.insertAll(objs, cb)` - Inserts records into the table.  If a record with the same key already exists, the operation fails.
 * `table.delete(key, cb)` - Deletes a record from the table with the given key.
 * `table.deleteAll(keys, cb)` - Deletes records from the table with the given keys.
 * `table.deleteIf(key, expect, cb)` - Deletes a record from the table with the given key if the expected field values are matched.
@@ -184,7 +183,6 @@ __File Methods__
 * `cxn.write(table, item, cb)`
 * `cxn.writeAll(table, items, cb)`
 * `cxn.insert(table, keyAttr, item, cb)`
-* `cxn.insertAll(table, keyAttr, items, cb)`
 * `cxn.upsert(table, keyAttr, item, cb)`
 * `cxn.update(table, keyAttr, item, cb)`
 * `cxn.exists(table, key, cb)`
