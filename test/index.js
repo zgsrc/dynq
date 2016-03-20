@@ -133,6 +133,21 @@ describe('Module', function() {
         });
     });
     
+    it("cannot edit with false conditions", function(done) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four" }).conditions({ value: "four" }).update(function(err, item) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can edit with true conditions", function(done) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "five" }).conditions({ value: "three" }).select("ALL_NEW").update(function(err, item) {
+            if (err) throw err;
+            else item.should.be.ok;
+            done();
+        });
+    });
+    
     it("can edit and upsert a record", function(done) {
         schema.tables.test.edit({ id: "1" }).change({ value: "four" }).add({ set: [ 1, 2 ] }).select("ALL_NEW").upsert(function(err, item) {
             if (err) throw err;
@@ -328,7 +343,7 @@ describe('Module', function() {
     });
     
     it("can restore records", function(done) {
-        this.timeout(60000);
+        this.timeout(120000);
         schema.restore(__dirname, function(err) {
             if (err) throw err;
             done();
@@ -422,7 +437,7 @@ describe('Module', function() {
     });
     
     it("can require a schema", function(done) {
-        this.timeout(120000);
+        this.timeout(180000);
         schema.require(__dirname + "/../examples/require").require(__dirname + "/../examples/require/user.js").create(function(err) {
             if (err) throw err;
             else done();
@@ -458,7 +473,7 @@ describe('Module', function() {
     });
     
     it("can drop a schema", function(done) {
-        this.timeout(120000);
+        this.timeout(180000);
         schema.drop(function(err) {
             if (err) throw err;
             else done();
