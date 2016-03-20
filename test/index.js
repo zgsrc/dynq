@@ -14,6 +14,12 @@ describe('Module', function() {
     
     this.timeout(10000);
     
+    beforeEach(function(done) {
+        setTimeout(function() {
+            done();
+        }, 2000);
+    });
+    
     it("ain't broke", function() {
         dynq = require("../index");
         dynq.debug = true;
@@ -89,7 +95,7 @@ describe('Module', function() {
             prefix: "TEST_" 
         }, function(err) {
             if (err) throw err;
-            else done();
+            done();
         });
     });
     
@@ -144,6 +150,13 @@ describe('Module', function() {
         schema.tables.test.edit({ id: "1" }).change({ value: "five" }).conditions({ value: "three" }).select("ALL_NEW").update(function(err, item) {
             if (err) throw err;
             else item.should.be.ok;
+            done();
+        });
+    });
+    
+    it("cannot edit and upsert a record with an invalid key", function(done) {
+        schema.tables.test.edit({ id: 1 }).change({ value: "four" }).add({ set: [ 1, 2 ] }).select("ALL_NEW").upsert(function(err, item) {
+            err.should.be.ok;
             done();
         });
     });
@@ -211,6 +224,13 @@ describe('Module', function() {
         });
     });
     
+    it("cannot confirm a record exists with an invalid key", function(done) {
+        schema.tables.test.exists({ id: 1 }, function(err, exists) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can get a record", function(done) {
         schema.tables.test.get({ id: "1" }, function(err, item) {
             if (err) throw err;
@@ -227,6 +247,13 @@ describe('Module', function() {
         });
     });
     
+    it("cannot get a record with an invalid key", function(done) {
+        schema.tables.test.get({ id: 1 }, function(err, item) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can get part of a record", function(done) {
         schema.tables.test.getPart({ id: "1" }, [ "id" ], function(err, item) {
             if (err) throw err;
@@ -234,6 +261,26 @@ describe('Module', function() {
                 expect(item).to.be.an("object");
                 Object.keys(item).length.should.equal(1);
             }
+            
+            done();
+        });
+    });
+    
+    it("can get part of a record with expression", function(done) {
+        schema.tables.test.getPart({ id: "1" }, "id", function(err, item) {
+            if (err) throw err;
+            else {
+                expect(item).to.be.an("object");
+                Object.keys(item).length.should.equal(1);
+            }
+            
+            done();
+        });
+    });
+    
+    it("cannot get part of a record with an invalid key", function(done) {
+        schema.tables.test.getPart({ id: 1 }, [ "id" ], function(err, item) {
+            err.should.be.ok;
             done();
         });
     });
@@ -268,6 +315,7 @@ describe('Module', function() {
     
     it("can delete a record", function(done) {
         schema.tables.test.delete({ id: "1" }, function(err) {
+            if (err) throw err;
             done();
         });
     });
@@ -285,6 +333,15 @@ describe('Module', function() {
             return { id: i.toString() }; 
         }), function(err) {
             if (err) throw err;
+            done();
+        });
+    });
+    
+    it("cannot write multiple records with invalid keys", function(done) {
+        schema.tables.test.writeAll((1).upto(3).map((i) => { 
+            return { id: i }; 
+        }), function(err) {
+            err.should.be.ok;
             done();
         });
     });
@@ -311,6 +368,13 @@ describe('Module', function() {
         });
     });
     
+    it("cannot get multiple records with invalid keys", function(done) {
+        schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i }; }), [ "id" ], function(err, items) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can get many records with more than 100 items", function(done) {
         var options = { };
         options[schema.tables.test.name] = {
@@ -321,6 +385,19 @@ describe('Module', function() {
         cxn.getMany(options, function(err, results) {
             if (err) throw err;
             else results[schema.tables.test.name].length.should.equal(105);
+            done();
+        });
+    });
+    
+    it("cannot get many records with more than 100 items with invalid keys", function(done) {
+        var options = { };
+        options[schema.tables.test.name] = {
+            keys: (1).upto(105).map((i) => { return { id: i }; }),
+            select: [ "id" ]
+        };
+        
+        cxn.getMany(options, function(err, results) {
+            err.should.be.ok;
             done();
         });
     });
@@ -339,6 +416,19 @@ describe('Module', function() {
         });
     });
     
+    it("cannot get many records fewer than 100 records with invalid keys", function(done) {
+        var options = { };
+        options[schema.tables.test.name] = {
+            keys: (1).upto(99).map((i) => { return { id: i }; }),
+            select: [ "id" ]
+        };
+        
+        cxn.getMany(options, function(err, results) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can select and delete multiple records", function(done) {
         schema.tables.test.scan().delete().all(function(err) {
             if (err) throw err;
@@ -346,10 +436,26 @@ describe('Module', function() {
         });
     });
     
+    it("can delete multiple records with no keys", function(done) {
+        schema.tables.test.deleteAll([ ], function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("cannot delete multiple records with invalid keys", function(done) {
+        schema.tables.test.deleteAll((1).upto(105).map((i) => { 
+            return { id: i }; 
+        }), function(err) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can delete multiple records", function(done) {
         schema.tables.test.deleteAll((1).upto(105).map((i) => { 
             return { id: i.toString() }; 
-        }), function(err, items) {
+        }), function(err) {
             if (err) throw err;
             done();
         });
@@ -385,6 +491,20 @@ describe('Module', function() {
         });
     });
     
+    it("cannot get all records with invalid conditions", function(done) {
+        schema.tables.test.query().conditions({ id: [ 1 ] }).all(function(err, result) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
+    it("cannot get first record with invalid conditions", function(done) {
+        schema.tables.test.query().conditions({ id: [ 1 ] }).first(function(err, result) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can get first record", function(done) {
         schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).backwards().select([ "id" ]).first(function(err, result) {
             if (err) throw err;
@@ -393,10 +513,24 @@ describe('Module', function() {
         });
     });
     
+    it("cannot project records with invalid conditions", function(done) {
+        schema.tables.test.query().conditions({ id: [ 1 ] }).select().page(function(err, result) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can project first record", function(done) {
         schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).backwards().select().first(function(err, result) {
             if (err) throw err;
             else result.should.be.ok;
+            done();
+        });
+    });
+    
+    it("cannot delete queried records with invalid conditions", function(done) {
+        schema.tables.test.query().conditions({ id: [ 1 ] }).delete().page(function(err, result) {
+            err.should.be.ok;
             done();
         });
     });
@@ -425,7 +559,7 @@ describe('Module', function() {
     });
     
     it("can apply expressions to a scan", function(done) {
-        schema.tables.test.scan().alias("i", "id").parameter("v", "1").filter("#i = :v").all(function(err, results) {
+        schema.tables.test.scan("#i = :v").alias("i", "id").parameter("v", "1").all(function(err, results) {
             if (err) throw err;
             else results.items.should.be.ok;
             done();
@@ -456,11 +590,26 @@ describe('Module', function() {
         });
     });
     
+    it("cannot change throughput on table with invalid throughput values", function(done) {
+        schema.tables.test.changeThroughput("asdf", "zxcv", function(err) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can change throughput on table", function(done) {
         this.timeout(30000);
         schema.tables.test.changeThroughput(6, 6, function(err) {
             if (err) throw err;
-            else done();
+            done();
+        });
+    });
+    
+    it("can load a schema with filter", function(done) {
+        this.timeout(180000);
+        schema.load(/none/, function(err) {
+            if (err) throw err;
+            done();
         });
     });
     
@@ -468,7 +617,7 @@ describe('Module', function() {
         this.timeout(180000);
         schema.require(__dirname + "/../examples/require").require(__dirname + "/../examples/require/user.js").create(function(err) {
             if (err) throw err;
-            else done();
+            done();
         });
     });
     
@@ -480,22 +629,45 @@ describe('Module', function() {
     });
     
     it("can call a table method", function(done) {
-        schema.tables.user.sample(done);
+        schema.tables.user.sample(function() {
+            done();
+        });
+    });
+    
+    it("cannot change throughput on index with invalid throughput values", function(done) {
+        schema.tables.user.changeIndexThroughput("ByTimestamp", "asdf", "qwer", function(err) {
+            err.should.be.ok;
+            done();
+        });
     });
     
     it("can change throughput on index", function(done) {
         this.timeout(30000);
         schema.tables.user.changeIndexThroughput("ByTimestamp", 6, 6, function(err) {
             if (err) throw err;
-            else done();
+            done();
         });
+    });
+    
+    it("cannot factor throughput with invalid factor", function(done) {
+        schema.tables.session.factorThroughput("asdf", function(err) {
+            err.should.be.ok;
+            done();
+        })
+    });
+    
+    it("cannot factor throughput with a negative factor", function(done) {
+        schema.tables.session.factorThroughput(-5, function(err) {
+            err.should.be.ok;
+            done();
+        })
     });
     
     it("can factor throughput", function(done) {
         this.timeout(30000);
         schema.tables.session.factorThroughput(1.1, function(err) {
             if (err) throw err;
-            else done();
+            done();
         })
     });
     
@@ -511,7 +683,7 @@ describe('Module', function() {
         this.timeout(180000);
         schema.drop(function(err) {
             if (err) throw err;
-            else done();
+            done();
         });
     });
     

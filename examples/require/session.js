@@ -7,6 +7,13 @@ module.exports = {
         ByOther: {
             columns: { other: "number" },
             project: [ "id", "other" ]
+        },
+        ByThird: {
+            columns: { third: "number" },
+            project: "ALL"
+        },
+        ByForth: {
+            columns: { forth: "number" }
         }
     },
     indices: {
