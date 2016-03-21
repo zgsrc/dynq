@@ -27,8 +27,13 @@ describe('Module', function() {
     });
     
     it("can create a connection", function() {
+        dynq.eproto = false;
+        dynq.config();
+        dynq.eproto = true;
+        
         var config = JSON.parse(fs.readFileSync(__dirname + "/../test.json"));
-        cxn = dynq.config(config).connect("us-east-1", true);
+        cxn = dynq.config(config).connect([ "us-east-1" ], true);
+        cxn = dynq.config(config).connect("us-east-1", false);
         
         cxn.destinations = [ ];
         cxn.addRegion();
@@ -87,6 +92,13 @@ describe('Module', function() {
         })
     });
     
+    it("cannot fetch some tables with invalid parameters", function(done) {
+        schema.listSomeTables(5, function(err, tableNames) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can create a schema", function(done) {
         this.timeout(120000);
         schema.create({ 
@@ -101,6 +113,18 @@ describe('Module', function() {
     
     it("has a test table", function() {
         expect(schema.tables.test).to.be.ok;
+    });
+    
+    it("fails to create a table that already exists", function(done) {
+        schema.createTable({
+            name: "TEST_test_table",
+            key: { id: "S" }, 
+            read: 5,
+            write: 5
+        }, function(err) {
+            err.should.be.ok;
+            done();
+        });
     });
     
     it("can insert a record", function(done) {
@@ -521,7 +545,7 @@ describe('Module', function() {
     });
     
     it("can project first record", function(done) {
-        schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).backwards().select().first(function(err, result) {
+        schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).direction("next").select().first(function(err, result) {
             if (err) throw err;
             else result.should.be.ok;
             done();
@@ -598,7 +622,7 @@ describe('Module', function() {
     });
     
     it("can change throughput on table", function(done) {
-        this.timeout(30000);
+        this.timeout(60000);
         schema.tables.test.changeThroughput(6, 6, function(err) {
             if (err) throw err;
             done();
@@ -642,7 +666,7 @@ describe('Module', function() {
     });
     
     it("can change throughput on index", function(done) {
-        this.timeout(30000);
+        this.timeout(60000);
         schema.tables.user.changeIndexThroughput("ByTimestamp", 6, 6, function(err) {
             if (err) throw err;
             done();
@@ -664,7 +688,7 @@ describe('Module', function() {
     });
     
     it("can factor throughput", function(done) {
-        this.timeout(30000);
+        this.timeout(60000);
         schema.tables.session.factorThroughput(1.1, function(err) {
             if (err) throw err;
             done();
