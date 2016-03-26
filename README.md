@@ -15,7 +15,6 @@ var dynq = require("dynq");
 
 // Configure using object or JSON file.
 dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5 });
-dynq.configFromPath("./aws.json");
 
 // Create a simple connection
 var cxn = new dynq.Connection("us-east-1");
@@ -30,9 +29,12 @@ cxn = dynq.connect([ "us-east-1", "us-west-1" ], true);
 
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
-* `dynq.config(config)`
-* `dynq.configFromPath(path)`
-* `dynq.debug`
+* `dynq.config(config)` – Configure the AWS library.
+* `dynq.dynamo(region)` – Method to create a low-level `AWS.DynamoDB` instance.
+* `dynq.throughputHandler(destination, table, index)` – Callback on `ProvisionedThroughputExceededException` errors
+* `dynq.debug` – Outputs all Dynamo operations to the logger
+* `dynq.eproto` – Option to take EPROTO error mitigation measures in `dynamo` method.
+* `dynq.logger` – Logger used in conjunction with debug.  Defaults to console.log.
 
 ### Constructors
 
@@ -100,7 +102,10 @@ __Schema Example__
             }
         },
         methods: function(table) {
-
+            // These methods will be mixed-in with the table object
+            this.foo = function(cb) {
+                cb();
+            };
         }
     }
 }
@@ -112,7 +117,7 @@ __Schema Example__
 var schema = dynq.connect("us-east-1").schema();
 
 schema.load(/PREFIX_.*/i, function(err) {
-    var table = schema["some-table"];
+    var table = schema.tables["PREFIX_some-table"];
 });
 ```
 
