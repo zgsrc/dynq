@@ -30,15 +30,15 @@ cxn = dynq.connect([ "us-east-1", "us-west-1" ], true);
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
 * `dynq.config(config)` – Configure the AWS library.
-* `dynq.dynamo(region)` – Method to create a low-level `AWS.DynamoDB` instance.
+* `dynq.dynamo(region)` – Method to create a low-level `AWS.DynamoDB` service interface.
 * `dynq.throughputHandler(destination, table, index)` – Callback on `ProvisionedThroughputExceededException` errors
-* `dynq.debug` – Outputs all Dynamo operations to the logger
+* `dynq.debug` – Outputs all Dynamo operations to the logger.
 * `dynq.eproto` – Option to take EPROTO error mitigation measures in `dynamo` method.
 * `dynq.logger` – Logger used in conjunction with debug.  Defaults to console.log.
 
-### Constructors
+### Connections
 
-Create connections with builder method or constructor syntax.
+Create connections with the builder method or constructor syntax.
 
 * `dynq.connect(regions, distributeReads)`
 * `new dynq.Connection(regions, distributeReads)`
@@ -64,7 +64,7 @@ __State__
 __Table Definition Methods__
 * `schema.listSomeTables(last, cb)` - List a page of tables starting from last.
 * `schema.listAllTables(cb)` - List all tables (automatically page until end).
-* `schema.createTable(name, columns, key, read, write, indices, locals, cb)` - Create a table.
+* `schema.createTable(definition, cb)` - Create a table.  Definition is in format of the _Schema Example_ below.
 * `schema.describeTable(table, cb)` - Load table metadata.
 * `schema.changeThroughput(table, read, write, cb)` - Change throughput for a table.
 * `schema.changeIndexThroughput(table, index, read, write, cb)` - Change throughput for an index.
@@ -117,7 +117,8 @@ __Schema Example__
 var schema = dynq.connect("us-east-1").schema();
 
 schema.load(/PREFIX_.*/i, function(err) {
-    var table = schema.tables["PREFIX_some-table"];
+    var table = schema.tables["PREFIX_Users"];
+    table.foo(cb => { });
 });
 ```
 
@@ -178,25 +179,25 @@ __File Methods__
 
 ### Connection Members
 
-* `cxn.distributeReads`
-* `cxn.destinations`
-* `cxn.debug`
-* `cxn.addRegion(region)`
+* `cxn.distributeReads` – If multiple masters are specified, each read is dispatched to a randomly selected source.
+* `cxn.destinations` – An array of service interfaces used in a multi-master configuration.
+* `cxn.debug` –  Outputs all connection operations to the logger.
+* `cxn.addRegion(region)` – Adds an additional region to the `destinations` array after construction.
 
 ### Key-Value Store Methods
 
-* `cxn.write(table, item, cb)`
-* `cxn.writeAll(table, items, cb)`
-* `cxn.insert(table, keyAttr, item, cb)`
-* `cxn.upsert(table, keyAttr, item, cb)`
-* `cxn.update(table, keyAttr, item, cb)`
-* `cxn.exists(table, key, cb)`
-* `cxn.get(table, key, cb)`
-* `cxn.getPart(table, key, select, cb)`
-* `cxn.getAll(table, keys, select, cb)`
-* `cxn.getMany(map, cb)`
-* `cxn.delete(table, key, expected, cb)`
-* `cxn.deleteAll(table, keys, cb)`
+* `cxn.write(table, item, cb)` – Writes an item.
+* `cxn.writeAll(table, items, cb)` – Writes multiple items.
+* `cxn.insert(table, keyAttr, item, cb)` – Inserts an item.  If an item with the same key exists, the operation fails.
+* `cxn.upsert(table, keyAttr, item, cb)` – Upserts an item.  If the item exists, the fields are merged with the existing item.
+* `cxn.update(table, keyAttr, item, cb)` – Updates an item.  If an item with the same key does not exist, the operation fails.
+* `cxn.exists(table, key, cb)` – Returns a boolean value indicating if an item with the given key exists.
+* `cxn.get(table, key, cb)` – Gets an item with the given key.
+* `cxn.getPart(table, key, select, cb)` – Gets part of an item.
+* `cxn.getAll(table, keys, select, cb)` – Gets all items with matching keys.
+* `cxn.getMany(map, cb)` – Get many items from multple tables.  Map has keys corresponding to table names, and values containing `keys` and `select`.
+* `cxn.delete(table, key, expected, cb)` – Deletes a item with the matching key and optionally other expected values.
+* `cxn.deleteAll(table, keys, cb)` – Deletes all items with matching keys.
 
 __Arguments__
 

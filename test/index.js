@@ -248,6 +248,14 @@ describe('Module', function() {
         });
     });
     
+    it("can confirm a record does not exist", function(done) {
+        schema.tables.test.exists({ id: "z" }, function(err, exists) {
+            if (err) throw err;
+            else expect(exists).to.be.not.ok;
+            done();
+        });
+    });
+    
     it("cannot confirm a record exists with an invalid key", function(done) {
         schema.tables.test.exists({ id: 1 }, function(err, exists) {
             err.should.be.ok;
@@ -403,7 +411,7 @@ describe('Module', function() {
         var options = { };
         options[schema.tables.test.name] = {
             keys: (1).upto(105).map((i) => { return { id: i.toString() }; }),
-            select: [ "id" ]
+            select: "id"
         };
         
         cxn.getMany(options, function(err, results) {
