@@ -17,7 +17,7 @@ describe('Module', function() {
     beforeEach(function(done) {
         setTimeout(function() {
             done();
-        }, 2000);
+        }, 100);
     });
     
     it("ain't broke", function() {
@@ -94,6 +94,8 @@ describe('Module', function() {
             prefix: "TEST_" 
         }, function(err) {
             if (err) throw err;
+            Object.keys(schema.tables).length.should.equal(1);
+            Object.keys(schema.definition).length.should.equal(1);
             done();
         });
     });
@@ -106,6 +108,8 @@ describe('Module', function() {
             prefix: "TEST_" 
         }, function(err) {
             if (err) throw err;
+            Object.keys(schema.tables).length.should.equal(1);
+            Object.keys(schema.definition).length.should.equal(1);
             done();
         });
     });
@@ -452,7 +456,7 @@ describe('Module', function() {
     
     it("can write multiple records", function(done) {
         schema.tables.test.writeAll((1).upto(105).map((i) => { 
-            return { id: i.toString() }; 
+            return { id: i.toString(), value: i.toString() }; 
         }), function(err) {
             if (err) throw err;
             done();
@@ -462,7 +466,7 @@ describe('Module', function() {
     it("cannot write multiple records with invalid keys", function(done) {
         cxn.debug = false;
         schema.tables.test.writeAll((1).upto(3).map((i) => { 
-            return { id: i, value: i }; 
+            return { id: i }; 
         }), function(err) {
             err.should.be.ok;
             cxn.debug = true;
@@ -483,30 +487,6 @@ describe('Module', function() {
             done();
         });
     });
-    
-    /*
-    it("triggers a provisioned throughput exception on many simultaneous reads", function(done) {
-        this.timeout(180000);
-        async.forEach((1).upto(500), function(i, cb) {
-            schema.tables.test.get({ id: "1" }, cb);
-        }, function(err) {
-            err.should.be.ok;
-            err.code.should.equal("ProvisionedThroughputExceededException");
-            setTimeout(done, 30000);
-        });
-    });
-    
-    it("triggers a provisioned throughput exception on many simultaneous writes", function(done) {
-        this.timeout(180000);
-        async.forEach((1).upto(500), function(i, cb) {
-            schema.tables.test.write({ id: "1", value: "one" }, cb);
-        }, function(err) {
-            err.should.be.ok;
-            err.code.should.equal("ProvisionedThroughputExceededException");
-            setTimeout(done, 30000);
-        });
-    });
-    */
     
     it("can get multiple records", function(done) {
         schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), [ "id" ], function(err, items) {
@@ -603,7 +583,7 @@ describe('Module', function() {
     });
     
     it("can select and delete multiple records", function(done) {
-        schema.tables.test.scan().conditions().delete().all(function(err) {
+        schema.tables.test.scan().consistent().conditions().delete().all(function(err) {
             if (err) throw err;
             done();
         });
@@ -851,12 +831,36 @@ describe('Module', function() {
     });
     
     it("can factor throughput", function(done) {
-        this.timeout(120000);
+        this.timeout(180000);
         schema.tables.session.factorThroughput(1.1, function(err) {
             if (err) throw err;
             done();
         })
     });
+    
+    /*
+    it("triggers a provisioned throughput exception on many simultaneous reads", function(done) {
+        this.timeout(180000);
+        async.forEach((1).upto(500), function(i, cb) {
+            schema.tables.test.get({ id: "1" }, cb);
+        }, function(err) {
+            err.should.be.ok;
+            err.code.should.equal("ProvisionedThroughputExceededException");
+            setTimeout(done, 30000);
+        });
+    });
+    
+    it("triggers a provisioned throughput exception on many simultaneous writes", function(done) {
+        this.timeout(180000);
+        async.forEach((1).upto(500), function(i, cb) {
+            schema.tables.test.write({ id: "1", value: "one" }, cb);
+        }, function(err) {
+            err.should.be.ok;
+            err.code.should.equal("ProvisionedThroughputExceededException");
+            setTimeout(done, 30000);
+        });
+    });
+    */
     
     it("can drop a table", function(done) {
         this.timeout(120000);
