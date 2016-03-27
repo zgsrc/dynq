@@ -36,9 +36,11 @@ describe('Module', function() {
         });
         
         cxn = dynq.config(config).connect({
-            region: "us-east-1", 
+            regions: "us-east-1", 
             distribute: false
         });
+        
+        cxn.addDestination();
         
         cxn = dynq.connect();
         cxn.debug = true;
@@ -488,9 +490,11 @@ describe('Module', function() {
     });
     
     it("can get multiple records", function(done) {
+        schema.connection.distributeReads = true;
         schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), [ "id" ], function(err, items) {
             if (err) throw err;
             else items.length.should.equal(105);
+            schema.connection.distributeReads = false;
             done();
         });
     });
@@ -663,6 +667,13 @@ describe('Module', function() {
         schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).backwards().select([ "id" ]).first(function(err, result) {
             if (err) throw err;
             else result.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can query with filter", function(done) {
+        schema.tables.test.query().conditions({ id: [ "EQ", "1" ] }).filter({ value: [ "EQ", 1 ] }).select([ "id" ]).first(function(err, result) {
+            if (err) throw err;
             done();
         });
     });

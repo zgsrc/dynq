@@ -177,10 +177,10 @@ __File Methods__
 
 ### Connection Members
 
-* `cxn.distributeReads` – If multiple masters are specified, each read is dispatched to a randomly selected source.  Not settable.
+* `cxn.distributeReads` – If multiple masters are specified, each read is dispatched to a randomly selected source.
 * `cxn.destinations` – An array of service interfaces used in a multi-master configuration.
 * `cxn.debug` –  Outputs all connection operations to the logger.
-* `cxn.addRegion(region)` – Adds an additional region to the `destinations` array after construction.
+* `cxn.addDestination(options)` – Adds an additional destination to the `destinations` array after construction.
 
 ### Key-Value Store Methods
 
