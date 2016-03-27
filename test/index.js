@@ -64,6 +64,9 @@ describe('Module', function() {
                     ByValue: {
                         columns: { nonexistant: "text" }
                     }
+                },
+                methods: function(table) {
+                    this.foo = function(cb) { cb(); };
                 }
             }
         });
@@ -84,6 +87,18 @@ describe('Module', function() {
     });
     
     it("can create a schema", function(done) {
+        this.timeout(120000);
+        schema.create({ 
+            minReadCapacity: 5, 
+            minWriteCapacity: 5, 
+            prefix: "TEST_" 
+        }, function(err) {
+            if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can re-create a schema", function(done) {
         this.timeout(120000);
         schema.create({ 
             minReadCapacity: 5, 
@@ -122,6 +137,7 @@ describe('Module', function() {
     });
     
     it("has a test table", function() {
+        dynq.debug = false;
         expect(schema.tables.test).to.be.ok;
     });
     
@@ -142,6 +158,24 @@ describe('Module', function() {
         this.timeout(45000);
         cxn.schema().load(function(err) {
             if (err) throw err;
+            done();
+        });
+    });
+    
+    it("can insert a record using connection interface", function(done) {
+        cxn.debug = false;
+        cxn.insert("TEST_test_table", "id", { id: "2" }, function(err) {
+            if (err) throw err;
+            cxn.debug = true;
+            done();
+        });
+    });
+    
+    it("can delete a record using connection interface", function(done) {
+        cxn.debug = false;
+        cxn.delete("TEST_test_table", { id: "2" }, { value: null }, function(err) {
+            if (err) throw err;
+            cxn.debug = true;
             done();
         });
     });
@@ -167,6 +201,15 @@ describe('Module', function() {
         });
     });
     
+    it("can upsert a record without debug", function(done) {
+        cxn.debug = false;
+        schema.tables.test.upsert({ id: "1", value: "two" }, function(err) {
+            if (err) throw err;
+            cxn.debug = true;
+            done();
+        });
+    });
+    
     it("can update a record", function(done) {
         schema.tables.test.update({ id: "1", value: "three" }, function(err) {
             if (err) throw err;
@@ -174,8 +217,17 @@ describe('Module', function() {
         });
     });
     
+    it("can update a record without debug", function(done) {
+        cxn.debug = false;
+        schema.tables.test.update({ id: "1", value: "three" }, function(err) {
+            if (err) throw err;
+            cxn.debug = true;
+            done();
+        });
+    });
+    
     it("can debug edit operation", function(done) {
-        schema.tables.test.edit({ id: "1" }).change({ value: "four", some: null }).select("ALL_NEW").debug(function(err, item) {
+        schema.tables.test.edit({ id: "1" }).change({ value: "four", some: null }).select("ALL_NEW").conditions().debug().debug(function(err, item) {
             if (err) throw err;
             else item.should.be.ok;
             done();
@@ -279,9 +331,11 @@ describe('Module', function() {
     });
     
     it("can confirm a record does not exist", function(done) {
+        cxn.debug = false;
         schema.tables.test.exists({ id: "z" }, function(err, exists) {
             if (err) throw err;
             else expect(exists).to.be.not.ok;
+            cxn.debug = true;
             done();
         });
     });
@@ -302,9 +356,11 @@ describe('Module', function() {
     });
     
     it("can get a record by value", function(done) {
+        cxn.debug = false;
         schema.tables.test.get("1", function(err, item) {
             if (err) throw err;
             else expect(item).to.be.an("object");
+            cxn.debug = true;
             done();
         });
     });
@@ -329,6 +385,7 @@ describe('Module', function() {
     });
     
     it("can get part of a record with expression", function(done) {
+        cxn.debug = false;
         schema.tables.test.getPart({ id: "1" }, "id", function(err, item) {
             if (err) throw err;
             else {
@@ -336,6 +393,7 @@ describe('Module', function() {
                 Object.keys(item).length.should.equal(1);
             }
             
+            cxn.debug = true;
             done();
         });
     });
@@ -369,8 +427,10 @@ describe('Module', function() {
     });
     
     it("can over-write a record", function(done) {
+        cxn.debug = false;
         schema.tables.test.write({ id: "1", value: "one" }, function(err) {
             if (err) throw err;
+            cxn.debug = true;
             done();
         });
     });
@@ -400,10 +460,12 @@ describe('Module', function() {
     });
     
     it("cannot write multiple records with invalid keys", function(done) {
+        cxn.debug = false;
         schema.tables.test.writeAll((1).upto(3).map((i) => { 
-            return { id: i }; 
+            return { id: i, value: i }; 
         }), function(err) {
             err.should.be.ok;
+            cxn.debug = true;
             done();
         });
     });
@@ -455,9 +517,11 @@ describe('Module', function() {
     });
     
     it("can get multiple records with projection expression", function(done) {
+        cxn.debug = false;
         schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), "id", function(err, items) {
             if (err) throw err;
             else items.length.should.equal(105);
+            cxn.debug = true;
             done();
         });
     });
@@ -510,6 +574,21 @@ describe('Module', function() {
         });
     });
     
+    it("can get many records fewer than 100 records and no select clause", function(done) {
+        var options = { };
+        options[schema.tables.test.name] = {
+            keys: (1).upto(99).map((i) => { return { id: i.toString() }; })
+        };
+        
+        cxn.debug = false;
+        cxn.getMany(options, function(err, results) {
+            if (err) throw err;
+            else results[schema.tables.test.name].length.should.equal(99);
+            cxn.debug = true;
+            done();
+        });
+    });
+    
     it("cannot get many records fewer than 100 records with invalid keys", function(done) {
         var options = { };
         options[schema.tables.test.name] = {
@@ -524,7 +603,7 @@ describe('Module', function() {
     });
     
     it("can select and delete multiple records", function(done) {
-        schema.tables.test.scan().delete().all(function(err) {
+        schema.tables.test.scan().conditions().delete().all(function(err) {
             if (err) throw err;
             done();
         });
@@ -538,10 +617,12 @@ describe('Module', function() {
     });
     
     it("cannot delete multiple records with invalid keys", function(done) {
+        cxn.debug = false;
         schema.tables.test.deleteAll((1).upto(105).map((i) => { 
             return { id: i }; 
         }), function(err) {
             err.should.be.ok;
+            cxn.debug = true;
             done();
         });
     });
@@ -586,7 +667,7 @@ describe('Module', function() {
     });
     
     it("cannot get all records with invalid conditions", function(done) {
-        schema.tables.test.query().conditions({ id: [ 1 ] }).all(function(err, result) {
+        schema.tables.test.query().conditions({ id: [ 1 ] }).debug().all(function(err, result) {
             err.should.be.ok;
             done();
         });
@@ -645,7 +726,7 @@ describe('Module', function() {
     });
     
     it("can filter a scan", function(done) {
-        schema.tables.test.scan().filter({ id: [ "EQ", "1" ], value: [ "EQ", "one" ] }).or().all(function(err, results) {
+        schema.tables.test.scan().filter().filter({ id: [ "EQ", "1" ], value: [ "EQ", "one" ] }).or().all(function(err, results) {
             if (err) throw err;
             else results.items.should.be.ok;
             done();
@@ -653,7 +734,7 @@ describe('Module', function() {
     });
     
     it("can apply expressions to a scan", function(done) {
-        schema.tables.test.scan("#i = :v").alias("i", "id").parameter("v", "1").all(function(err, results) {
+        schema.tables.test.scan("#i = :v AND #v = :x").alias("i", "id").alias("#v", "value").parameter("v", "1").parameter(":x", "1").all(function(err, results) {
             if (err) throw err;
             else results.items.should.be.ok;
             done();
@@ -661,7 +742,7 @@ describe('Module', function() {
     });
     
     it("can get a limited number of records", function(done) {
-        schema.tables.test.scan().limit(20).select("ALL_ATTRIBUTES").all(function(err, results) {
+        schema.tables.test.scan().consistent().limit().limit(20).select("ALL_ATTRIBUTES").all(function(err, results) {
             if (err) throw err;
             else results.items.length.should.equal(20);
             done();
@@ -677,7 +758,7 @@ describe('Module', function() {
     });
     
     it("can project records", function(done) {
-        schema.tables.test.scan().select().all(function(err, results) {
+        schema.tables.test.scan().consistent().select().all(function(err, results) {
             if (err) throw err;
             else results.items.length.should.equal(104);
             done();
