@@ -12,19 +12,63 @@ chai.should();
 
 describe('Module', function() {
     
-    this.timeout(10000);
-    
-    beforeEach(function(done) {
-        setTimeout(function() {
-            done();
-        }, 100);
-    });
-    
     it("ain't broke", function() {
         dynq = require("../index");
         dynq.debug = true;
         dynq.logger = dynq.util.logger = () => { };
     });
+    
+});
+
+describe('Utils', function() {
+    
+    it("can encode and decode complex objects", function() {
+        var obj = { 
+            id: "1", 
+            value: "six",
+            x1: 1,
+            x2: true,
+            x3: [ "asdf", "zxcv" ],
+            x4: [ 1, 2, 3 ],
+            x5: new Buffer(3),
+            x6: [ new Buffer(2), new Buffer(3) ],
+            x7: { 
+                x: 3, 
+                y: "asdf", 
+                z: [ 3, "hello", null ], 
+                n1: [ 1, 2, 3], 
+                s1: [ "hello", "goodbye" ], 
+                b1: [ new Buffer(1), { list: [ 1 ] } ], 
+                b2: new Buffer(1), 
+                d1: (new Date()),
+                ae: [ ] 
+            },
+            x8: [ 
+                { x: 3, y: "asdf" }, 
+                { x: 3, y: "asdf" }, 
+                [ 1, 2, 3 ], 
+                [ "hello", "goodbye" ], 
+                [ new Buffer(1) ], 
+                [ "asdf", 1, false, { okay: 1 } ],
+                new Buffer(1),
+                (new Date()),
+                [ ]
+            ],
+            x9: null,
+            x10: (new Date())
+        };
+        
+        var json = JSON.stringify(dynq.util.decode(dynq.util.encode(obj)));
+        JSON.stringify(obj).should.equal(json);
+    });
+    
+    it("can deal with logical edge case in decode operation", function() {
+        dynq.util.decode({ some: null, other: { X: 1 } });
+    });
+    
+});
+    
+describe('Connection', function() {
     
     it("can create a connection", function() {
         dynq.config();
@@ -50,8 +94,16 @@ describe('Module', function() {
         dynq.throughputHandler(null, "table", "index");
     });
     
-    it("can deal with logical edge case in decode operation", function() {
-        dynq.util.decode({ some: null, other: { X: 1 } });
+});
+
+describe('Schema', function() {
+    
+    this.timeout(10000);
+    
+    beforeEach(function(done) {
+        setTimeout(function() {
+            done();
+        }, 100);
     });
     
     it("can define a schema", function() {
