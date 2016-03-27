@@ -260,6 +260,7 @@ describe('Module', function() {
     });
     
     it("cannot write a record bigger than 400KB", function(done) {
+        this.timeout(30000);
         schema.tables.test.write({
             id: "1",
             value: new Buffer(500 * 1024)
