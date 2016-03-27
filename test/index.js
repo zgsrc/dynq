@@ -23,16 +23,17 @@ describe('Module', function() {
     it("ain't broke", function() {
         dynq = require("../index");
         dynq.debug = true;
-        dynq.logger = () => { };
+        dynq.logger = dynq.util.logger = () => { };
     });
     
     it("can create a connection", function() {
         dynq.eproto = false;
         dynq.config();
-        dynq.eproto = true;
         
         var config = JSON.parse(fs.readFileSync(__dirname + "/../test.json"));
         cxn = dynq.config(config).connect([ "us-east-1" ], true);
+        
+        dynq.eproto = true;
         cxn = dynq.config(config).connect("us-east-1", false);
         
         cxn.destinations = [ ];
@@ -48,13 +49,22 @@ describe('Module', function() {
         dynq.throughputHandler(null, "table", "index");
     });
     
+    it("can deal with logical edge case in decode operation", function() {
+        dynq.util.decode({ some: null, other: { X: 1 } });
+    });
+    
     it("can define a schema", function() {
         schema = cxn.schema().define({
             test: {
                 name: "test_table",
                 key: { id: "S" }, 
                 read: 5,
-                write: 5
+                write: 5,
+                indices: {
+                    ByValue: {
+                        columns: { nonexistant: "text" }
+                    }
+                }
             }
         });
     });
@@ -69,6 +79,18 @@ describe('Module', function() {
     it("can fail to create table without primary key", function(done) {
         schema.createTable({ name: "whatever" }, function(err) {
             err.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can create a schema", function(done) {
+        this.timeout(120000);
+        schema.create({ 
+            minReadCapacity: 5, 
+            minWriteCapacity: 5, 
+            prefix: "TEST_" 
+        }, function(err) {
+            if (err) throw err;
             done();
         });
     });
@@ -99,23 +121,12 @@ describe('Module', function() {
         });
     });
     
-    it("can create a schema", function(done) {
-        this.timeout(120000);
-        schema.create({ 
-            minReadCapacity: 5, 
-            minWriteCapacity: 5, 
-            prefix: "TEST_" 
-        }, function(err) {
-            if (err) throw err;
-            done();
-        });
-    });
-    
     it("has a test table", function() {
         expect(schema.tables.test).to.be.ok;
     });
     
     it("fails to create a table that already exists", function(done) {
+        this.timeout(30000);
         schema.createTable({
             name: "TEST_test_table",
             key: { id: "S" }, 
@@ -123,6 +134,14 @@ describe('Module', function() {
             write: 5
         }, function(err) {
             err.should.be.ok;
+            done();
+        });
+    });
+    
+    it("can load the full schema without filter", function(done) {
+        this.timeout(45000);
+        cxn.schema().load(function(err) {
+            if (err) throw err;
             done();
         });
     });
@@ -240,6 +259,16 @@ describe('Module', function() {
         });
     });
     
+    it("cannot write a record bigger than 400KB", function(done) {
+        schema.tables.test.write({
+            id: "1",
+            value: new Buffer(500 * 1024)
+        }, function(err, item) {
+            err.should.be.ok;
+            done();
+        });
+    });
+    
     it("can confirm a record exists", function(done) {
         schema.tables.test.exists({ id: "1" }, function(err, exists) {
             if (err) throw err;
@@ -325,7 +354,7 @@ describe('Module', function() {
     });
     
     it("can conditionally delete a record with correct values", function(done) {
-        schema.tables.test.deleteIf({ id: "1" }, { value: "six" }, function(err) {
+        schema.tables.test.deleteIf({ id: "1" }, { value: "six", z: null }, function(err) {
             if (err) throw err;
             done();
         });
@@ -392,8 +421,40 @@ describe('Module', function() {
         });
     });
     
+    /*
+    it("triggers a provisioned throughput exception on many simultaneous reads", function(done) {
+        this.timeout(180000);
+        async.forEach((1).upto(500), function(i, cb) {
+            schema.tables.test.get({ id: "1" }, cb);
+        }, function(err) {
+            err.should.be.ok;
+            err.code.should.equal("ProvisionedThroughputExceededException");
+            setTimeout(done, 30000);
+        });
+    });
+    
+    it("triggers a provisioned throughput exception on many simultaneous writes", function(done) {
+        this.timeout(180000);
+        async.forEach((1).upto(500), function(i, cb) {
+            schema.tables.test.write({ id: "1", value: "one" }, cb);
+        }, function(err) {
+            err.should.be.ok;
+            err.code.should.equal("ProvisionedThroughputExceededException");
+            setTimeout(done, 30000);
+        });
+    });
+    */
+    
     it("can get multiple records", function(done) {
         schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), [ "id" ], function(err, items) {
+            if (err) throw err;
+            else items.length.should.equal(105);
+            done();
+        });
+    });
+    
+    it("can get multiple records with projection expression", function(done) {
+        schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), "id", function(err, items) {
             if (err) throw err;
             else items.length.should.equal(105);
             done();
@@ -411,7 +472,7 @@ describe('Module', function() {
         var options = { };
         options[schema.tables.test.name] = {
             keys: (1).upto(105).map((i) => { return { id: i.toString() }; }),
-            select: "id"
+            select: [ "id" ]
         };
         
         cxn.getMany(options, function(err, results) {
@@ -438,7 +499,7 @@ describe('Module', function() {
         var options = { };
         options[schema.tables.test.name] = {
             keys: (1).upto(99).map((i) => { return { id: i.toString() }; }),
-            select: [ "id" ]
+            select: "id"
         };
         
         cxn.getMany(options, function(err, results) {
@@ -494,7 +555,7 @@ describe('Module', function() {
     });
     
     it("has no records", function(done) {
-        schema.tables.test.scan().all(function(err, items) {
+        schema.tables.test.scan().consistent().all(function(err, items) {
             if (err) throw err;
             else items.count.should.equal(0);
             done();
@@ -630,7 +691,7 @@ describe('Module', function() {
     });
     
     it("can change throughput on table", function(done) {
-        this.timeout(60000);
+        this.timeout(120000);
         schema.tables.test.changeThroughput(6, 6, function(err) {
             if (err) throw err;
             done();
@@ -643,6 +704,18 @@ describe('Module', function() {
             if (err) throw err;
             done();
         });
+    });
+    
+    it("cannot require a bad schema", function() {
+        try {
+            schema.require(__dirname + "/../examples/bad");
+        }
+        catch (ex) {
+            ex.should.be.ok;
+            return;
+        }
+        
+        throw new Error("Accepts bad schema.");
     });
     
     it("can require a schema", function(done) {
@@ -674,7 +747,7 @@ describe('Module', function() {
     });
     
     it("can change throughput on index", function(done) {
-        this.timeout(60000);
+        this.timeout(120000);
         schema.tables.user.changeIndexThroughput("ByTimestamp", 6, 6, function(err) {
             if (err) throw err;
             done();
@@ -696,7 +769,7 @@ describe('Module', function() {
     });
     
     it("can factor throughput", function(done) {
-        this.timeout(60000);
+        this.timeout(120000);
         schema.tables.session.factorThroughput(1.1, function(err) {
             if (err) throw err;
             done();
@@ -704,7 +777,7 @@ describe('Module', function() {
     });
     
     it("can drop a table", function(done) {
-        this.timeout(30000);
+        this.timeout(120000);
         schema.tables.test.drop(function(err) {
             if (err) throw err;
             done();

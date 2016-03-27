@@ -1,0 +1,1 @@
+throw Error("Bad schema file.");
