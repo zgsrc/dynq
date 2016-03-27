@@ -27,21 +27,20 @@ describe('Module', function() {
     });
     
     it("can create a connection", function() {
-        dynq.eproto = false;
         dynq.config();
         
-        var config = JSON.parse(fs.readFileSync(__dirname + "/../test.json"));
-        cxn = dynq.config(config).connect([ "us-east-1" ], true);
+        var config = JSON.parse(fs.readFileSync(__dirname + "/config.json"));
+        cxn = dynq.config(config).connect({
+            regions: [ "us-east-1" ], 
+            distribute: true
+        });
         
-        dynq.eproto = true;
-        cxn = dynq.config(config).connect("us-east-1", false);
+        cxn = dynq.config(config).connect({
+            region: "us-east-1", 
+            distribute: false
+        });
         
-        cxn.destinations = [ ];
-        cxn.addRegion();
-        
-        cxn.destinations = [ ];
         cxn = dynq.connect();
-        
         cxn.debug = true;
     });
     
@@ -837,30 +836,6 @@ describe('Module', function() {
             done();
         })
     });
-    
-    /*
-    it("triggers a provisioned throughput exception on many simultaneous reads", function(done) {
-        this.timeout(180000);
-        async.forEach((1).upto(500), function(i, cb) {
-            schema.tables.test.get({ id: "1" }, cb);
-        }, function(err) {
-            err.should.be.ok;
-            err.code.should.equal("ProvisionedThroughputExceededException");
-            setTimeout(done, 30000);
-        });
-    });
-    
-    it("triggers a provisioned throughput exception on many simultaneous writes", function(done) {
-        this.timeout(180000);
-        async.forEach((1).upto(500), function(i, cb) {
-            schema.tables.test.write({ id: "1", value: "one" }, cb);
-        }, function(err) {
-            err.should.be.ok;
-            err.code.should.equal("ProvisionedThroughputExceededException");
-            setTimeout(done, 30000);
-        });
-    });
-    */
     
     it("can drop a table", function(done) {
         this.timeout(120000);

@@ -1,7 +1,7 @@
 .DS_Store
 lib/.DS_Store
 
-test.json
+test/config.json
 
 node_modules
 coverage

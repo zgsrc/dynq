@@ -14,13 +14,13 @@ AWS DynamoDB query library.  It makes data access layers based on DynamoDB easie
 var dynq = require("dynq");
 
 // Configure using object or JSON file.
-dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5 });
+dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5, region: "us-east-1" });
 
 // Create a simple connection
-var cxn = new dynq.Connection("us-east-1");
+var cxn = new dynq.Connection({ region: "us-east-1" });
 
 // Create a multi-master connection with an array of AWS regions.
-cxn = dynq.connect([ "us-east-1", "us-west-1" ], true);
+cxn = dynq.connect({ regions: [ "us-east-1", "us-west-1" ], distribute: true });
 ```
 
 ## Documentation
@@ -29,24 +29,22 @@ cxn = dynq.connect([ "us-east-1", "us-west-1" ], true);
 
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
-* `dynq.config(config)` – Configure the AWS library.
-* `dynq.dynamo(region)` – Method to create a low-level `AWS.DynamoDB` service interface.
+* `dynq.config(config)` – Configure the AWS DynamoDB. Chainable with `connect` call.
 * `dynq.throughputHandler(destination, table, index)` – Callback on `ProvisionedThroughputExceededException` errors
 * `dynq.debug` – Outputs all Dynamo operations to the logger.
-* `dynq.eproto` – Option to take EPROTO error mitigation measures in `dynamo` method.
 * `dynq.logger` – Logger used in conjunction with debug.  Defaults to console.log.
 
 ### Connections
 
 Create connections with the builder method or constructor syntax.
 
-* `dynq.connect(regions, distributeReads)`
-* `new dynq.Connection(regions, distributeReads)`
+* `dynq.connect(options)`
+* `new dynq.Connection(options)`
 
-__Arguments__
+__Additional Options__
 
 * `regions` - A string or array of AWS regions (e.g. us-east-1).
-* `distributeReads` - A boolean value specifying if reads should be distributed across regions.
+* `distribute` - A boolean value specifying if reads should be distributed across regions.
 
 ### Schemas
 
