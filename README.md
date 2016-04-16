@@ -1,31 +1,76 @@
 ![DynQ](/package.jpg "DynQ")
 
 # DynQ
-AWS DynamoDB query library.  It makes data access layers based on DynamoDB easier to develop and maintain.  Call it "dink" if you like.  Amongst other things, this library features:
+AWS DynamoDB datastore library.  It makes data access layers based on DynamoDB easier to develop and maintain.  Call it "dink" if you like.  Amongst other things, this library features:
 
-* Support for multi-master writes and distributed reads.
-* Automatic resubmission of 'retryable' and provision throughput errors.
-* Transparent encoding to and decoding from DynamoDB typed JSON.
-* Schema definition and detection
-* Intuitive query builder and execution API
+* Schemas
+* Queries
+* Mixins
+* Automatic encoding/decoding of DynamoDB typed JSON format
+* Multi-master support
+
+## Installation
+
+    npm install dynq
+    
+To use dynq, you need an [AWS account](https://aws.amazon.com/).  Once [signed into AWS](https://console.aws.amazon.com/console/home), go to [IAM Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential) section, click on the Access Keys section and get an `access key id` and a `secret access key`.  Use these credentials to configure and connect `dynq` to AWS DynamoDB.
 
 ## Get Started
-```js
+
+The flexibility of `dynq` comes from using metadata.  A `schema` model uses table definitions and gets existing table metadata to facilitate more seamless programming.
+
+```javascript
 var dynq = require("dynq");
 
 // Configure using object or JSON file.
 dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5, region: "us-east-1" });
 
-// Create a simple connection
-var cxn = new dynq.Connection({ region: "us-east-1" });
+// Load a schema of tables from file or folder
+var schema = dynq.connect().schema().require(path.join(__dirname, "model"), { 
+        customize: "reuseable model", 
+        configuration: "Setting", 
+        enableFeature: true 
+    });
+    
+// Ensure tables exist and are 'active'
+schema.create({ 
+    prefix: "TABLE_PREFIX_",
+    minReadCapacity: 25,
+    minWriteCapacity: 20
+}, (err) => { /* ready! */ });
 
-// Create a multi-master connection with an array of AWS regions.
-cxn = dynq.connect({ regions: [ "us-east-1", "us-west-1" ], distribute: true });
+// Easily backup and restore data
+schema.backup(__dirname + "/directory", (err) => { });
+schema.restore(__dirname + "/directory", (err) => { });
+
+// Access tables and data
+var table = schema.tables.table;
+table.insert({ id: 1, range: 2 }, err => { ... });
+table.write({ id: 1, range: 2 }, err => { ... });
+table.upsert({ id: 1 range: 2 }, err => { ... });
+table.update({ id: 1 range: 3 }, err => { ... });
+table.delete(1, err => { ... });
+table.exists(1, (err, exists) = > { ... });
+table.get(1, (err, item) => { ... });
+table.getPart(1, [ "range" ], (err, item) => { ... });
+
+// Query keys-only index and project rest of record
+table.query({ id: 1 }).select.all((err, results) => { ... });
+
+// Query and update data
+table.query({ id: 1, range: [ "LT", 10 ] })
+    .where({ field: [ "BEGINS_WITH", "abc" ] })
+    .update((edit, cb) => {
+        edit.change({ ... }).add({ ... }).remove({ ... }).upsert(cb);
+    }).all(err => { ... });
+
+// Query and delete data
+table.query({ id: 1, range: [ "LT", 10 ] })
+    .where({ field: [ "BEGINS_WITH", "abc" ] })
+    .delete().all(err => { ... });
 ```
 
-## Documentation
-
-### Configuration
+## Configuration
 
 Configure library with standard [AWS configuration options](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Config.html#constructor-property).
 
@@ -35,6 +80,14 @@ Configure library with standard [AWS configuration options](http://docs.aws.amaz
 * `dynq.logger` – Logger used in conjunction with debug.  Defaults to console.log.
 
 ### Connections
+
+```javascript
+// Create a simple connection
+var cxn = new dynq.Connection({ region: "us-east-1" });
+
+// Create a multi-master connection with an array of AWS regions.
+cxn = dynq.connect({ regions: [ "us-east-1", "us-west-1" ], distribute: true });
+```
 
 Create connections with the builder method or constructor syntax.
 
@@ -48,9 +101,112 @@ __Additional Options__
 
 ### Schemas
 
-The schema API puts structure around the definition and querying of DynamoDB tables.
+Schemas put a programming model around DynamoDB tables using metadata and definition objects.  The easiest way to define a table schema is within a javascript file loaded with the `schema.require` method.
 
-```js
+__Schema Example__
+```javascript
+// index.js
+var schema = dynq.connect().schema().require("user.js", { 
+    ... /* options */
+}).create({ 
+    ... /* options */
+}, (err, schema) => {
+    ... /* ready */
+});
+
+// user.js
+module.exports = {
+    name: "UsersTable",
+    key: { id: "string" },
+    read: 5,
+    write: 5,
+    sort: {
+        ByUser: {
+            columns: { user: "string" },
+            project: "ALL"
+        }
+    },
+    indices: {
+        ByTimestamp: {
+            columns: { timestamp: "number" },
+            read: 5,
+            write: 5,
+            project: "ALL"
+        }
+    },
+    methods: function(table) {
+        // These methods will be mixed-in with the table object
+        this.foo = function(cb) {
+            cb();
+        };
+    }
+};
+```
+
+__NOTE:__ The `schema.require` method uses the file name as the identifier within the programming model (i.e. `schema.tables.user`).
+
+The `schema.require` method may take options, which allows development of reuseable table schema generators, or components.  `options` passed to the `schema.require` method are available to a schema definition when defined as a function.
+
+```javascript
+// to expose options use a function
+module.exports = function(options) {
+    return { 
+        name: "Users",
+        key: { id: "string" },
+        read: 5,
+        write: 5,
+        ...
+    };
+}
+```
+
+Because a schema definition can be thought of as a flexible component, the `schema.create` method also takes options that support customizations like table name prefixes (`prefix`) and read/write capacities (`minReadCapacity` and `minWriteCapacity`).
+
+__Behaviors__
+
+A big advantage of schemaless databases like Dynamo is that the data model is readily extensible.  When coupled with method mixins, reuseable behaviors can be composed on tables.
+
+```javascript
+// behavior.js
+exports.module = function(option) {
+    // perform some logic based on options
+    var indexName = options.indexName;
+    return function(definition) {
+        // inspect or alter defintion
+        defintion.indicies[indexName] = { columns: { id: "text" } };
+        return function(table) {
+            // add mixin methods
+            this.operation = (cb) => {
+                // table exists within this scope
+            };
+        };
+    };
+};
+
+// schema.js
+exports.module = function(options) {
+    // behaviors allow composition of table functionality
+    return {
+        name: "table",
+        key: { id: "string" },
+        behaviors: [
+            require("behavior.js")(options)
+        ]
+    };
+};
+```
+
+__Programming Model__
+
+A `dyna.schema` provides table creation, modification, and deletion functionality and pares this with table definition and description schemas.
+
+Tables can be defined with the `schema.define` and `schema.require` methods, which merge into the overall `schema.definition` object.  If you have a tables already created, use the `schema.load` to populate the schema from DynamoDB table descriptions.
+
+To bring a schema to life, call the `schema.create` which enumerates through each table in `schema.definition`.  Existing tables are loaded via `schema.load` and ones that do not are created.  All tables can be deleted with `schema.drop`.  The entire schema can be `schema.backup`'d to and `schema.restore`'d from a folder of flat files.
+
+Once a schema has been created, `schema.tables` contain the `dynq.table` objects to be read and written.
+
+```javascript
 var schema = dynq.connect("us-east-1").schema();
 ```
 
@@ -59,10 +215,11 @@ __State__
 * `schema.tables` - A map of loaded tables.
 * `schema.definition` - A definition of tables to be created or loaded.
 
-__Table Definition Methods__
+__Table Creation, Modification, and Deletion Methods__
 * `schema.listSomeTables(last, cb)` - List a page of tables starting from last.
 * `schema.listAllTables(cb)` - List all tables (automatically page until end).
 * `schema.createTable(definition, cb)` - Create a table.  Definition is in format of the _Schema Example_ below.
+* `schema.deleteTable(table, cb)` - Deletes a table.
 * `schema.describeTable(table, cb)` - Load table metadata.
 * `schema.changeThroughput(table, read, write, cb)` - Change throughput for a table.
 * `schema.changeIndexThroughput(table, index, read, write, cb)` - Change throughput for an index.
@@ -70,52 +227,30 @@ __Table Definition Methods__
 
 __Schema Management Methods__
 * `schema.load(filter, cb)` - Load tables with names that match filter.
-* `schema.define(definition)` - Set `schema.definition` from object.
-* `schema.require(filepath)` - Loads a table into `schema.definition` from a module.  If a directory is specified, all modules are loaded.
-* `schema.create(cb)` - Load tables from `schema.definition` and create ones that do not exist.
+* `schema.define(definition)` - Merge into `schema.definition` from object.
+* `schema.require(filepath, [options])` - Loads a table into `schema.definition` from a module.  If a directory is specified, all modules are loaded.
+* `schema.create([options,] cb)` - Load tables from `schema.definition` and create ones that do not exist.
 * `schema.drop(cb)` - Drop tables from `schema.definition` that exist.
 * `schema.backup(dir, cb)` - Saves data from loaded DyanmoDB tables into JSON files.
 * `schema.restore(dir, cb)` - Load records into DynamoDB tables from JSON files in the given directory.
 
-__Schema Example__
-```js
-{
-    Users: {
-        name: "Users",
-        key: { id: "string" },
-        read: 5,
-        write: 5,
-        sort: {
-            ByUser: {
-                columns: { user: "string" },
-                project: "ALL"
-            }
-        },
-        indices: {
-            ByTimestamp: {
-                columns: { timestamp: "number" },
-                read: 5,
-                write: 5,
-                project: "ALL"
-            }
-        },
-        methods: function(table) {
-            // These methods will be mixed-in with the table object
-            this.foo = function(cb) {
-                cb();
-            };
-        }
-    }
-}
-```
-
 ### Tables
 
-```js
+Tables are accessed through the `schema.table` object and use DynamoDB table description metadata to provide programming abstrations above the low-level DynamoDB API.  With knowledge of the key attributes, a `table` provide conditional record-level methods like `insert`, `update`, and `exists`.  Mass operations like `writeAll`, `deleteAll`, and `getAll` use smart batching logic to gracefully handle DynamoDB operation limitations.
+
+The `table.query` and `table.edit` are builder interfaces for more complicated actions.  The `edit` interface allows for `add` and `remove` operations (in addition to `change`) on individual items.  The `query` interface invokes index queries and table scans, whose data can either be directly returned, or repurposed as keys for a batch select, update, or delete operation.
+
+`table.mixin` enables extension of `table` methods.  Only methods with names who do not already exist will be mixed into the `table`.
+
+```javascript
 var schema = dynq.connect("us-east-1").schema();
 
 schema.load(/PREFIX_.*/i, function(err) {
     var table = schema.tables["PREFIX_Users"];
+    table.mixin(function(table) {
+        this.foo = cb => { cb() };
+    });
+    
     table.foo(cb => { });
 });
 ```
@@ -124,6 +259,7 @@ __Table-Level Members__
 * `table.name` - The name of the table.
 * `table.schema` - The schema to which this table belongs.
 * `table.description` - The metadata from `schema.describeTable(name)`.
+* `table.mixin(class)` – Initializes a `class` with this table and mixes in the instance methods.
 * `table.changeThroughput(read, write, cb)` - Change throughput for a table.
 * `table.changeIndexThroughput(index, read, write, cb)` - Change throughput for an index.
 * `table.factorThroughput(factor, cb)` - Factors throughput across the table and its indices.
@@ -149,6 +285,7 @@ __Query Interface__
 * `query.start(start)` - Start query from this key.
 * `query.limit(count)` - Maximum number of records to query.
 * `query.select(select)` - A list of attributes to select, an attribute qualifier, or a projection expression. If empty, the whole record is projected with a separate getItem operation.
+* `query.update(editor)` – An update operation to be performed on each item, taking an `edit` interface object and a `cb`.
 * `query.delete()` - Delete the queried records.
 * `query.backwards()` - Reverse the order in which records are returned.
 * `query.direction(direction)` - Set the order in which records are returned.
@@ -175,14 +312,20 @@ __File Methods__
 * `table.backup(filepath, cb)` - Save the contents of the DynamoDB table to a file.
 * `table.restore(filepath, cb)` - Load the contents of a file to the DynamoDB table.
 
-### Connection Members
+### Low-Level Connection Interface
+
+The `dynq` module supports the `logger` and `debug` global configuration operations.  The `logger` defaults to `console.log`.  If `debug` is set to true, all DynamoDB native operations are logged.
+
+The `Connection` class provides access to native DynamoDB operations with multi-master support and throughput handling infrastructure.  Some  conditional and mass operations like `insert` and `insertAll` are build on top of the native calls to support higher-level table operations.
+
+##### Configuration
 
 * `cxn.distributeReads` – If multiple masters are specified, each read is dispatched to a randomly selected source.
 * `cxn.destinations` – An array of service interfaces used in a multi-master configuration.
 * `cxn.debug` –  Outputs all connection operations to the logger.
 * `cxn.addDestination(options)` – Adds an additional destination to the `destinations` array after construction.
 
-### Key-Value Store Methods
+##### Methods
 
 * `cxn.write(table, item, cb)` – Writes an item.
 * `cxn.writeAll(table, items, cb)` – Writes multiple items.
@@ -209,7 +352,7 @@ __Arguments__
 
 These methods automatically encode parameters to and decode responses from the DynamoDB typed JSON format.
 
-### DynamoDB Native Operations
+##### Native DynamoDB Operation Proxies
 
 The returned connections are compatible with the [AWS DynamoDB API](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html).
 
