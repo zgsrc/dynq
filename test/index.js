@@ -12,10 +12,18 @@ chai.should();
 
 describe('Module', function() {
     
+    before(function() {
+        fs.unlinkSync(__dirname + "/output.txt");
+    });
+    
     it("ain't broke", function() {
         dynq = require("../index");
         dynq.debug = true;
-        dynq.logger = dynq.util.logger = () => { };
+        
+        dynq.logger = dynq.util.logger = (output) => { 
+            if (!Object.isString(output)) output = JSON.stringify(output, null, '\t');
+            fs.appendFileSync(__dirname + "/output.txt", Date.create().format("{hh}:{mm}:{ss}") + " - " + output + "\n");
+        };
     });
     
 });
@@ -98,7 +106,7 @@ describe('Connection', function() {
 
 describe('Schema', function() {
     
-    this.timeout(10000);
+    this.timeout(30000);
     
     beforeEach(function(done) {
         setTimeout(function() {

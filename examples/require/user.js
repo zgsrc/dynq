@@ -9,6 +9,7 @@ module.exports = function(options) {
                 columns: { timestamp: "number" }
             }
         },
+        mixins: [ require("./behavior/sample")(options) ],
         methods: function(table) {
             this.sample = function(cb) {
                 cb();
