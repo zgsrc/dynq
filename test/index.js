@@ -10,20 +10,21 @@ var fs = require("fs"),
 
 chai.should();
 
+function log(output) { 
+    if (!Object.isString(output)) output = JSON.stringify(output, null, '\t');
+    fs.appendFileSync(__dirname + "/output.txt", Date.create().format("{hh}:{mm}:{ss}") + " - " + output + "\n");
+};
+
 describe('Module', function() {
     
     before(function() {
-        fs.unlinkSync(__dirname + "/output.txt");
+        fs.unlink(__dirname + "/output.txt", () => { });
     });
     
     it("ain't broke", function() {
         dynq = require("../index");
         dynq.debug = true;
-        
-        dynq.logger = dynq.util.logger = (output) => { 
-            if (!Object.isString(output)) output = JSON.stringify(output, null, '\t');
-            fs.appendFileSync(__dirname + "/output.txt", Date.create().format("{hh}:{mm}:{ss}") + " - " + output + "\n");
-        };
+        dynq.logger = dynq.util.logger = log;
     });
     
 });
@@ -107,12 +108,6 @@ describe('Connection', function() {
 describe('Schema', function() {
     
     this.timeout(30000);
-    
-    beforeEach(function(done) {
-        setTimeout(function() {
-            done();
-        }, 100);
-    });
     
     it("can define a schema", function() {
         schema = cxn.schema().define({
@@ -867,6 +862,14 @@ describe('Schema', function() {
     
     it("can call a table method", function(done) {
         schema.tables.user.sample(function() {
+            done();
+        });
+    });
+    
+    it("can call a mixin method", function(done) {
+        schema.tables.user.test(function(err, result) {
+            if (err) throw err;
+            result.should.be.ok;
             done();
         });
     });
