@@ -162,7 +162,7 @@ module.exports = function(options) {
 
 Because a schema definition can be thought of as a flexible component, the `schema.create` method also takes options that support customizations like table name prefixes (`prefix`) and read/write capacities (`minReadCapacity` and `minWriteCapacity`).
 
-__Behaviors__
+__Mixins__
 
 A big advantage of schemaless databases like Dynamo is that the data model is readily extensible.  When coupled with method mixins, reuseable behaviors can be composed on tables.
 
@@ -189,9 +189,7 @@ exports.module = function(options) {
     return {
         name: "table",
         key: { id: "string" },
-        behaviors: [
-            require("behavior.js")(options)
-        ]
+        mixins: require("behavior.js")(options)
     };
 };
 ```
