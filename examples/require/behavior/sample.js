@@ -1,9 +1,14 @@
 var uuid = require("node-uuid");
 
-module.exports = options => definition => function(table) {
+module.exports = options => definition => {
     
-    this.test = (cb) => {
-        cb(null, table.name);
+    definition.indices.ByCode = {
+        columns: { code: "number" }
     };
     
+    return function(table) {
+        this.test = (cb) => {
+            cb(null, table.name);
+        };
+    };
 };
