@@ -109,6 +109,10 @@ describe('Schema', function() {
     
     this.timeout(30000);
     
+    beforeEach(function() {
+        log("!!! TEST: " + this.currentTest.fullTitle().toUpperCase() + " !!!");
+    });
+    
     it("can define a schema", function() {
         schema = cxn.schema().define({
             test: {

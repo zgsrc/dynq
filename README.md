@@ -297,9 +297,11 @@ __Query Interface__
 
 __Edit Interface__
 * `table.edit(obj)` - Returns an edit interface to alter or insert records.
-* `edit.change(values)` - Field values to be changed/overwritten.
+* `edit.change(values)` - Field values to be changed/overwritten.  (Fields without a value are set to null; to remove fields, use remove/delete.)
+* `edit.put(values)` – Alias for `edit.change`.
 * `edit.add(values)` - Field values to be added.  If numeric, this means atomic addition/subtraction.  If a set, this means addition to the set.
-* `edit.remove(values)` - Field values to be removed.  If a set, this means removal from the set.
+* `edit.remove(values)` - Field values to be removed.  If a set, this means removal from the set.  If an array, denotes a list of fields to be removed.
+* `edit.delete(values)` - Alias for `edit.remove`.
 * `edit.conditions(expected)` - Values expected to be found in the record.  If not matched, the operation fails.
 * `edit.select(select)` - A list of fields to select from the record.
 * `edit.update(cb)` - Updates the record.  If a record does not exist, the operation fails.
