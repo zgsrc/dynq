@@ -13,7 +13,7 @@ chai.should();
 function log(output) { 
     if (!Object.isString(output)) output = JSON.stringify(output, null, '\t');
     fs.appendFileSync(__dirname + "/output.txt", Date.create().format("{hh}:{mm}:{ss}") + " - " + output + "\n");
-};
+}
 
 describe('Module', function() {
     
