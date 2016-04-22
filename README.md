@@ -280,16 +280,16 @@ __Query Interface__
 * `table.scan()` - Returns a query interface configured to filter on a table scan.
 * `query.index(name)` - The name of an index to query (if not querying the primary key).
 * `query.conditions(conditions)` - The conditions on the key and hash of the index.
-* `query.start(start)` - Start query from this key.
-* `query.limit(count)` - Maximum number of records to query.
+* `query.filter(filter)` - Set filter conditions on non-indexed fields.
+* `query.or()` - Change filter conditions from "and" to "or".
 * `query.select(select)` - A list of attributes to select, an attribute qualifier, or a projection expression. If empty, the whole record is projected with a separate getItem operation.
 * `query.update(editor)` – An update operation to be performed on each item, taking an `edit` interface object and a `cb`.
 * `query.delete()` - Delete the queried records.
 * `query.backwards()` - Reverse the order in which records are returned.
 * `query.direction(direction)` - Set the order in which records are returned.
-* `query.filter(filter)` - Set filter conditions on non-indexed fields.
-* `query.or()` - Change filter conditions from "and" to "or".
 * `query.segment(segment, total)` - Segment a scan operation into parts.
+* `query.start(start)` - Start query from this key.
+* `query.limit(count)` - Maximum number of records to query.
 * `query.first(cb)` - Return the first record from the query.
 * `query.page(cb)` - Return a page of records.
 * `query.all(cb)` - Return all records (automatically paging until the end).
