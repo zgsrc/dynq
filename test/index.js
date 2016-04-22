@@ -94,9 +94,7 @@ describe('Connection', function() {
         });
         
         cxn.addDestination();
-        
         cxn = dynq.connect();
-        cxn.debug = true;
     });
     
     it("can access the throughput handler", function() {
@@ -201,7 +199,6 @@ describe('Schema', function() {
     });
     
     it("has a test table", function() {
-        dynq.debug = false;
         expect(schema.tables.test).to.be.ok;
     });
     
@@ -227,19 +224,15 @@ describe('Schema', function() {
     });
     
     it("can insert a record using connection interface", function(done) {
-        cxn.debug = false;
         cxn.insert("TEST_test_table", "id", { id: "2" }, function(err) {
             if (err) throw err;
-            cxn.debug = true;
             done();
         });
     });
     
     it("can delete a record using connection interface", function(done) {
-        cxn.debug = false;
         cxn.delete("TEST_test_table", { id: "2" }, { value: null }, function(err) {
             if (err) throw err;
-            cxn.debug = true;
             done();
         });
     });
@@ -265,27 +258,9 @@ describe('Schema', function() {
         });
     });
     
-    it("can upsert a record without debug", function(done) {
-        cxn.debug = false;
-        schema.tables.test.upsert({ id: "1", value: "two" }, function(err) {
-            if (err) throw err;
-            cxn.debug = true;
-            done();
-        });
-    });
-    
     it("can update a record", function(done) {
         schema.tables.test.update({ id: "1", value: "three" }, function(err) {
             if (err) throw err;
-            done();
-        });
-    });
-    
-    it("can update a record without debug", function(done) {
-        cxn.debug = false;
-        schema.tables.test.update({ id: "1", value: "three" }, function(err) {
-            if (err) throw err;
-            cxn.debug = true;
             done();
         });
     });
@@ -395,11 +370,9 @@ describe('Schema', function() {
     });
     
     it("can confirm a record does not exist", function(done) {
-        cxn.debug = false;
         schema.tables.test.exists({ id: "z" }, function(err, exists) {
             if (err) throw err;
             else expect(exists).to.be.not.ok;
-            cxn.debug = true;
             done();
         });
     });
@@ -420,11 +393,9 @@ describe('Schema', function() {
     });
     
     it("can get a record by value", function(done) {
-        cxn.debug = false;
         schema.tables.test.get("1", function(err, item) {
             if (err) throw err;
             else expect(item).to.be.an("object");
-            cxn.debug = true;
             done();
         });
     });
@@ -449,7 +420,6 @@ describe('Schema', function() {
     });
     
     it("can get part of a record with expression", function(done) {
-        cxn.debug = false;
         schema.tables.test.getPart({ id: "1" }, "id", function(err, item) {
             if (err) throw err;
             else {
@@ -457,7 +427,6 @@ describe('Schema', function() {
                 Object.keys(item).length.should.equal(1);
             }
             
-            cxn.debug = true;
             done();
         });
     });
@@ -491,10 +460,8 @@ describe('Schema', function() {
     });
     
     it("can over-write a record", function(done) {
-        cxn.debug = false;
         schema.tables.test.write({ id: "1", value: "one" }, function(err) {
             if (err) throw err;
-            cxn.debug = true;
             done();
         });
     });
@@ -524,12 +491,10 @@ describe('Schema', function() {
     });
     
     it("cannot write multiple records with invalid keys", function(done) {
-        cxn.debug = false;
         schema.tables.test.writeAll((1).upto(3).map((i) => { 
             return { id: i }; 
         }), function(err) {
             err.should.be.ok;
-            cxn.debug = true;
             done();
         });
     });
@@ -559,11 +524,10 @@ describe('Schema', function() {
     });
     
     it("can get multiple records with projection expression", function(done) {
-        cxn.debug = false;
+        this.timeout(90000);
         schema.tables.test.getAll((1).upto(105).map((i) => { return { id: i.toString() }; }), "id", function(err, items) {
             if (err) throw err;
             else items.length.should.equal(105);
-            cxn.debug = true;
             done();
         });
     });
@@ -622,11 +586,9 @@ describe('Schema', function() {
             keys: (1).upto(99).map((i) => { return { id: i.toString() }; })
         };
         
-        cxn.debug = false;
         cxn.getMany(options, function(err, results) {
             if (err) throw err;
             else results[schema.tables.test.name].length.should.equal(99);
-            cxn.debug = true;
             done();
         });
     });
@@ -659,12 +621,10 @@ describe('Schema', function() {
     });
     
     it("cannot delete multiple records with invalid keys", function(done) {
-        cxn.debug = false;
         schema.tables.test.deleteAll((1).upto(105).map((i) => { 
             return { id: i }; 
         }), function(err) {
             err.should.be.ok;
-            cxn.debug = true;
             done();
         });
     });
@@ -694,7 +654,7 @@ describe('Schema', function() {
     });
     
     it("can restore records", function(done) {
-        this.timeout(120000);
+        this.timeout(360000);
         schema.restore(__dirname, function(err) {
             if (err) throw err;
             done();
@@ -822,7 +782,7 @@ describe('Schema', function() {
     });
     
     it("can change throughput on table", function(done) {
-        this.timeout(120000);
+        this.timeout(360000);
         schema.tables.test.changeThroughput(6, 6, function(err) {
             if (err) throw err;
             done();
@@ -830,7 +790,7 @@ describe('Schema', function() {
     });
     
     it("can load a schema with filter", function(done) {
-        this.timeout(180000);
+        this.timeout(360000);
         schema.load(/none/, function(err) {
             if (err) throw err;
             done();
@@ -850,7 +810,7 @@ describe('Schema', function() {
     });
     
     it("can require a schema", function(done) {
-        this.timeout(180000);
+        this.timeout(360000);
         schema.require(__dirname + "/../examples/require").require(__dirname + "/../examples/require/user.js").create(function(err) {
             if (err) throw err;
             done();
@@ -886,7 +846,7 @@ describe('Schema', function() {
     });
     
     it("can change throughput on index", function(done) {
-        this.timeout(120000);
+        this.timeout(360000);
         schema.tables.user.changeIndexThroughput("ByTimestamp", 6, 6, function(err) {
             if (err) throw err;
             done();
@@ -908,7 +868,7 @@ describe('Schema', function() {
     });
     
     it("can factor throughput", function(done) {
-        this.timeout(180000);
+        this.timeout(360000);
         schema.tables.session.factorThroughput(1.1, function(err) {
             if (err) throw err;
             done();
@@ -916,7 +876,7 @@ describe('Schema', function() {
     });
     
     it("can drop a table", function(done) {
-        this.timeout(120000);
+        this.timeout(360000);
         schema.tables.test.drop(function(err) {
             if (err) throw err;
             done();
@@ -924,7 +884,7 @@ describe('Schema', function() {
     });
     
     it("can drop a schema", function(done) {
-        this.timeout(180000);
+        this.timeout(360000);
         schema.drop(function(err) {
             if (err) throw err;
             done();
