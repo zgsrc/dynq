@@ -27,10 +27,10 @@ dynq.config({ accessKeyId: "xxx", secretAccessKey: "yyy", maxRetries: 5, region:
 
 // Load a schema of tables from file or folder
 var schema = dynq.connect().schema().require(path.join(__dirname, "model"), { 
-        customize: "reuseable model", 
-        configuration: "Setting", 
-        enableFeature: true 
-    });
+    customize: "reuseable model", 
+    configuration: "Setting", 
+    enableFeature: true 
+});
     
 // Ensure tables exist and are 'active'
 schema.create({ 
@@ -42,18 +42,35 @@ schema.create({
 // Easily backup and restore data
 schema.backup(__dirname + "/directory", (err) => { });
 schema.restore(__dirname + "/directory", (err) => { });
+```
 
-// Access tables and data
+Connections and tables build on the basic `putItem`, `deleteItem`, and `updateItem` actions to provide a more comprehensive set of record-level mutation methods.
+
+```javascript
+// Mutation operations
 var table = schema.tables.table;
 table.insert({ id: 1, range: 2 }, err => { ... });
 table.write({ id: 1, range: 2 }, err => { ... });
 table.upsert({ id: 1 range: 2 }, err => { ... });
 table.update({ id: 1 range: 3 }, err => { ... });
 table.delete(1, err => { ... });
+
+// Query operations
 table.exists(1, (err, exists) = > { ... });
 table.get(1, (err, item) => { ... });
 table.getPart(1, [ "range" ], (err, item) => { ... });
 
+// Bulk operations
+table.writeAll([ ... ], err => { ... });
+table.getAll([ ... ], err => { ... });
+table.deleteAll([ ... ], err => { ... });
+```
+
+__Queries__
+
+The most advanced features of mutation operations supported by DyanmoDB are exposed though a series of builder classes exposed by a `table`.  
+
+```javascript
 // Query keys-only index and project rest of record
 table.query({ id: 1 }).select.all((err, results) => { ... });
 
@@ -134,7 +151,7 @@ module.exports = {
             project: "ALL"
         }
     },
-    methods: function(table) {
+    members: function(table) {
         // These methods will be mixed-in with the table object
         this.foo = function(cb) {
             cb();
@@ -162,9 +179,25 @@ module.exports = function(options) {
 
 Because a schema definition can be thought of as a flexible component, the `schema.create` method also takes options that support customizations like table name prefixes (`prefix`) and read/write capacities (`minReadCapacity` and `minWriteCapacity`).
 
-__Mixins__
+__Mixins and Behaviors__
 
-A big advantage of schemaless databases like Dynamo is that the data model is readily extensible.  When coupled with method mixins, reuseable behaviors can be composed on tables.
+A big advantage of schemaless databases like Dynamo is that the data model is readily extensible.  Methods added to the table can easily manipulate state, thereby implementing some semantically significant functionality.  For example, an `articles` table might benefit from a `publish` method.
+
+Table objects in a schema can be extended through mixins.  A mixin takes the form of a function or class which will be initialized with the inheriting table.  They are mounted on table definitions using the `mixin`, `members`, `properties`, or `methods` fields.  The `mixins` field may be used to mount multiple mixins as an array, which is useful in the development and composition of components.
+
+```javascript
+function(table) { 
+    this.sample = cb => { cb(); };
+}
+
+// - or -
+
+class mixin {
+    constructor(table) { }
+}
+```
+
+A behavior is a mixin that also has access to, and may manipulate, the table definition itself.  In the example of the `articles` table and `publish` method above, this functionality may be enhanced by a global secondary index on a `published` field.  A behavior not only implements the functional logic, but might also add an index or query the existing schema.
 
 ```javascript
 // behavior.js
@@ -189,7 +222,7 @@ exports.module = function(options) {
     return {
         name: "table",
         key: { id: "string" },
-        mixins: require("behavior.js")(options)
+        behaviors: require("behavior.js")(options)
     };
 };
 ```
