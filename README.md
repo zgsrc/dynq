@@ -76,14 +76,14 @@ table.query({ id: 1 }).select.all((err, results) => { ... });
 
 // Query and update data
 table.query({ id: 1, range: [ "LT", 10 ] })
-    .where({ field: [ "BEGINS_WITH", "abc" ] })
+    .filter({ field: [ "BEGINS_WITH", "abc" ] })
     .update((edit, cb) => {
         edit.change({ ... }).add({ ... }).remove({ ... }).upsert(cb);
     }).all(err => { ... });
 
 // Query and delete data
 table.query({ id: 1, range: [ "LT", 10 ] })
-    .where({ field: [ "BEGINS_WITH", "abc" ] })
+    .filter({ field: [ "BEGINS_WITH", "abc" ] })
     .delete().all(err => { ... });
 ```
 
@@ -296,6 +296,10 @@ __Table-Level Members__
 * `table.factorThroughput(factor, cb)` - Factors throughput across the table and its indices.
 * `table.drop(cb)` - Drops this table.
 
+__File Methods__
+* `table.backup(filepath, cb)` - Save the contents of the DynamoDB table to a file.
+* `table.restore(filepath, cb)` - Load the contents of a file to the DynamoDB table.
+
 __Record-Level Methods__
 * `table.write(obj, cb)` - Writes a record to the table.  If a record with the same key already exists, it is overwritten.
 * `table.writeAll(objs, cb)` - Writes records to the table.  If a record with the same key already exists, it is overwritten.
@@ -314,6 +318,7 @@ __Query Interface__
 * `query.index(name)` - The name of an index to query (if not querying the primary key).
 * `query.conditions(conditions)` - The conditions on the key and hash of the index.
 * `query.filter(filter)` - Set filter conditions on non-indexed fields.
+* `query.expression(expression)` - Set filter expression on non-indexed fields.
 * `query.or()` - Change filter conditions from "and" to "or".
 * `query.select(select)` - A list of attributes to select, an attribute qualifier, or a projection expression. If empty, the whole record is projected with a separate getItem operation.
 * `query.update(editor)` – An update operation to be performed on each item, taking an `edit` interface object and a `cb`.
@@ -341,9 +346,55 @@ __Edit Interface__
 * `edit.upsert(cb)` - Upserts the record.  If a record does not exists, one is created.
 * `edit.debug(cb)` - Write the JSON of the query and return it if a cb is supplied.
 
-__File Methods__
-* `table.backup(filepath, cb)` - Save the contents of the DynamoDB table to a file.
-* `table.restore(filepath, cb)` - Load the contents of a file to the DynamoDB table.
+__Conditions Composer__
+
+Calls that take a `conditions` object may build this object using the conditions composer interface by passing a function instead.
+
+```javascript
+table.where(op => op.field("id").equals(1).and("timestamp").greaterThan(12341234));
+// instead of
+table.where({ id: 1, timestamp: [ "greater than", 12341234 ] });
+```
+
+* `conditions.field(name)` - Sets up a new condition on a table attribute.
+* `conditions.and(name)` - Alias for `conditions.field` to improve readability.  Actual conditional operator set on `query` interface.
+* `conditions.or(name)` - Alias for `conditions.field`.  Actual conditional operator set on `query` interface.
+* `conditions.equals(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.notEqual(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.lessThan(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.lessThanOrEqual(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.greaterThan(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.greaterThanOrEqual(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.notNull()` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.isNull()` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.contains(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.doesNotContain(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.beginsWith(value)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.in(array)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.between(min, max)` - Right hand side of field condition.  Should follow a field declaration.
+* `conditions.toConditions()` - Returns a conditions object that can be used in a call to `conditions`.
+
+__Expression Composer__
+
+The expression composer interface simplifies DynamoDB expressions by assembling the expression string while simultaneously populating the `ExpressionAttributeNames` and `ExpressionAttributeValues` parameters.
+
+```javascript
+table.query().expression(if => if("id", "=", 1).and("timestamp", "between", 12341234, 23452345).and().exists("somefield").or("size(text)", ">", 2));
+```
+__comparator__ can be "in", "between", "<>", "<", "<=", ">", ">=".
+__operand__ can be an attribute name, a path, or the "size" function.
+__value2__ is only used with the "between" comparator.
+
+* `expression.if(operand, comparator, value, [value2])` - Sets up a new condition on a table attribute.
+* `expression.and([operand, comparator, value, [value2]])` - Sets up a new condition on a table attribute.
+* `expression.or([operand, comparator, value, [value2]])` - Sets up a new condition on a table attribute.
+* `expression.not([operand, comparator, value, [value2]])` - Sets up a new condition on a table attribute.
+* `expression.exists(path)` - Checks if an attribute or path exists.
+* `expression.missing(path)` - Checks if an attribute or path does not exist.
+* `expression.type(path, type)` - Checks if an attribute or path has the given datatype.
+* `expression.begins(path, substr)` - Checks if an attribute or path begins with a given value.
+* `expression.contains(path, value)` - Checks if an attribute or path contains a given value.
+* `expression.toExpression()` - Returns the composed expression string
 
 ### Low-Level Connection Interface
 
